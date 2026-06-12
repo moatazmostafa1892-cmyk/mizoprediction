@@ -688,7 +688,7 @@ table.tt tr:last-child td{border-bottom:none}
 <!-- COMPARE -->
 <div id="compare" class="sec">
   <div class="sec-title">Compare & Results</div>
-  <div class="sec-sub">Predictions stay hidden until the actual result is saved/synced for that match · green = correct result · gold = exact score</div>
+  <div class="sec-sub">Results auto-populate from live data · green = correct result · gold = exact score · manual entry also supported</div>
   <div class="toolbar">
     <button class="fbtn act" onclick="setCmpFilt('all',this)">All</button>
     <button class="fbtn" onclick="setCmpFilt('MD1',this)">GW1</button>
@@ -1469,6 +1469,31 @@ function isLocked(stageKey) {
   return s ? Date.now() >= new Date(s.deadline).getTime() : true;
 }
 
+
+// My Bracket should remain hidden/locked until the full group stage is finished.
+// It unlocks after the last group match is expected to end, then uses the user's saved group predictions.
+function groupStageEndTime() {
+  const lastKickoff = Math.max(...GM.map(m => new Date(m[8]).getTime()));
+  return lastKickoff + 115 * 60000; // 90 mins + half time/stoppage buffer
+}
+function isMyBracketUnlocked() {
+  return Date.now() >= groupStageEndTime();
+}
+function myBracketUnlockText() {
+  return new Date(groupStageEndTime()).toLocaleString('en-GB', {
+    day:'numeric', month:'short', hour:'2-digit', minute:'2-digit', timeZone:'UTC'
+  }) + ' UTC';
+}
+function updateMyBracketNavLock() {
+  const btn = [...document.querySelectorAll('.nav-btn')]
+    .find(b => (b.getAttribute('onclick') || '').includes("bracket-pred"));
+  if(!btn) return;
+  const unlocked = isMyBracketUnlocked();
+  btn.innerHTML = unlocked ? '🔮 My Bracket' : '🔒 My Bracket';
+  btn.title = unlocked ? 'My Bracket is available' : `Unlocks after group stage ends: ${myBracketUnlockText()}`;
+  btn.style.opacity = unlocked ? '' : '.72';
+}
+
 // Hard guard: map any match ID to its stage and refuse prediction writes after deadline.
 // This protects Firebase writes even if the UI still has stale editable inputs open.
 function stageForMatch(mid) {
@@ -1480,12 +1505,6 @@ function stageForMatch(mid) {
 function isPredictionLockedForMatch(mid) {
   const st = stageForMatch(mid);
   return !st || isLocked(st);
-}
-function isCompareUnlockedForMatch(mid) {
-  // Compare should reveal everyone only after the real result exists.
-  // This keeps predictions hidden during the match and after deadline until actual score is saved/synced.
-  const act = la()[mid];
-  return !!(act && act.hg !== undefined && act.ag !== undefined);
 }
 function stripLockedPredictionChanges(user, incoming) {
   const existing = lp(user) || {};
@@ -1643,6 +1662,7 @@ let pendingChanges = {};
 // ── NAV ─────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
 function goTo(id, btn) {
+  updateMyBracketNavLock();
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('act'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('act'));
   document.getElementById(id).classList.add('act');
@@ -2173,15 +2193,10 @@ let _editingGrpId = null; // null = new group, string = editing existing
 
 // ── Tab visibility: only show tab to logged-in user if they are in that group
 function visibleGroupsForCurrentUser() {
-  // Privacy rule: a league/group tab is visible only to members of that league.
-  // The built-in All Players tab remains visible as the default overview.
-  const all = getAllLbGroups();
-  if(!currentUser) return all.filter(g => g.id === 'all');
-  return all.filter(g => {
-    if(g.id === 'all') return true;
-    if(!Array.isArray(g.players)) return true;
-    return g.players.includes(currentUser);
-  });
+  // All logged-in users see all groups — the leaderboard filters correctly per group
+  // No need to hide tabs since data isn't sensitive
+  if(!currentUser) return getAllLbGroups().filter(g => g.id === 'all');
+  return getAllLbGroups();
 }
 
 function renderLbTabs() {
@@ -2671,6 +2686,7 @@ const BRACKET_FLOW = {
 // Click a team in the predictions bracket to advance them to the next round
 function predBracketPick(matchId, team, teamSlot) {
   if(!currentUser) { showToast('Select a user first'); return; }
+  if(!isMyBracketUnlocked()) { showToast('🔒 My Bracket unlocks after the group stage ends'); return; }
   if(isPredictionLockedForMatch(matchId)) { showToast('🔒 This bracket stage is locked — predictions are read-only'); return; }
   const user = currentUser;
   const pb = loadPredBracket(user);
@@ -2856,8 +2872,30 @@ const ANNEX_C = {
 
 // ── PREDICTIONS BRACKET (click to advance) ───────────────────────────
 function renderBracketPred() {
-  if(!currentUser && !document.getElementById('br-tree-pred')) return;
-  const user = currentUser || 'Moataz';
+  const tree = document.getElementById('br-tree-pred');
+  if(!tree) return;
+  updateMyBracketNavLock();
+
+  if(!currentUser) {
+    tree.innerHTML = '<p style="color:var(--grey);padding:16px 0">Please select a user first.</p>';
+    const sub = document.getElementById('pred-br-sub');
+    if(sub) sub.textContent = 'R32 drawn from your predicted group standings';
+    return;
+  }
+
+  if(!isMyBracketUnlocked()) {
+    tree.innerHTML = `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px 24px;max-width:520px;color:var(--grey);line-height:1.5">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);letter-spacing:1px;margin-bottom:6px">🔒 My Bracket Locked</div>
+      <div style="font-size:13px;margin-bottom:10px">This tab will unlock automatically after the group stage ends.</div>
+      <div style="font-size:12px">Unlock time: <strong style="color:var(--white)">${myBracketUnlockText()}</strong></div>
+      <div style="font-size:12px;margin-top:8px">When it unlocks, it will use your saved group-stage predictions to generate the Round of 32 bracket.</div>
+    </div>`;
+    const sub = document.getElementById('pred-br-sub');
+    if(sub) sub.textContent = `Locked until group stage ends — ${myBracketUnlockText()}`;
+    return;
+  }
+
+  const user = currentUser;
   const S = calcStandings(user);
   const thirds = calcThirds(user);
   const pb = loadPredBracket(user);
@@ -2920,7 +2958,6 @@ function renderBracketPred() {
 
   const winner_of = mid => pb[mid + '_winner'] || null;
 
-  const tree = document.getElementById('br-tree-pred');
   tree.innerHTML = '';
 
   // Build a clickable match card
@@ -3349,6 +3386,9 @@ function renderCompare(){
   if(!sel){sel=document.createElement('style');sel.id=sid;document.head.appendChild(sel);}
   sel.textContent=`.cmp-hd-row,.cmp-data-row{grid-template-columns:160px repeat(${n},minmax(140px,1fr)) 110px;}`;
 
+  const stageLockedMap={};
+  STAGES.forEach(s=>{stageLockedMap[s.key]=isLocked(s.key);});
+
   Object.entries(byDate).forEach(([date,ms])=>{
     const label=new Date(date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long'});
     const sec=document.createElement('div');
@@ -3363,8 +3403,11 @@ function renderCompare(){
 
     ms.forEach(m=>{
       const [mid,,,,home,away]=m;
+      const stageKey=m[1];
+      const stageLocked=stageLockedMap[stageKey]||false;
       const act=actuals[mid];
-      const visible=isCompareUnlockedForMatch(mid); // show everyone only when actual result is saved/synced
+      const matchPlayed=!!(act&&act.hg!==undefined);
+      const visible=stageLocked||matchPlayed; // show once stage locked OR match played
 
       const isAuto=act&&act.source&&act.source!=='manual';
       const row=document.createElement('div');
