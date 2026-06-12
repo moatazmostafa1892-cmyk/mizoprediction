@@ -3180,7 +3180,6 @@ try {
   ];
   var si=0, playing=false, clipTimer=null, CLIP=60, player=null, apiReady=false;
 
-  // Load YT IFrame API
   var s=document.createElement('script');
   s.src='https://www.youtube.com/iframe_api';
   document.head.appendChild(s);
@@ -3201,30 +3200,43 @@ try {
           if(e.data===YT.PlayerState.PLAYING){
             playing=true;
             document.getElementById('music-toggle').textContent='⏸';
+            // Restart clip timer every time PLAYING fires
             clearTimeout(clipTimer);
-            clipTimer=setTimeout(nextSong,CLIP*1000);
+            clipTimer=setTimeout(function(){ nextSong(); }, CLIP*1000);
           }
-          if(e.data===YT.PlayerState.PAUSED||e.data===YT.PlayerState.BUFFERING){
-            if(e.data===YT.PlayerState.PAUSED){
-              playing=false;
-              document.getElementById('music-toggle').textContent='▶';
-              clearTimeout(clipTimer);
-            }
+          if(e.data===YT.PlayerState.PAUSED){
+            playing=false;
+            document.getElementById('music-toggle').textContent='▶';
+            clearTimeout(clipTimer);
           }
-          if(e.data===YT.PlayerState.ENDED) nextSong();
+          if(e.data===YT.PlayerState.ENDED){ nextSong(); }
         },
         onError:function(){ nextSong(); }
       }
     });
   };
 
+  function playSong(index){
+    si = (index + SONGS.length) % SONGS.length;
+    updateLabel();
+    clearTimeout(clipTimer);
+    if(!player) return;
+    // cueVideoById then play — more reliable than loadVideoById alone
+    player.cueVideoById(SONGS[si].id);
+    setTimeout(function(){
+      if(player && player.playVideo) player.playVideo();
+      // Backup timer: if onStateChange:PLAYING never fires within 5s, force next
+      clipTimer = setTimeout(function(){
+        if(playing) return; // PLAYING fired, the real timer is running
+        nextSong(); // something went wrong, skip
+      }, 5000);
+    }, 300);
+  }
+
   function nextSong(){
     clearTimeout(clipTimer);
-    si=(si+1)%SONGS.length;
-    if(player&&player.loadVideoById){
-      player.loadVideoById(SONGS[si].id);
-    }
-    updateLabel();
+    playing=false;
+    playSong(si + 1);
   }
 
   function updateLabel(){
@@ -3237,7 +3249,12 @@ try {
     if(playing){
       player.pauseVideo();
     } else {
-      player.playVideo();
+      if(player.getPlayerState()===YT.PlayerState.PAUSED ||
+         player.getPlayerState()===YT.PlayerState.CUED){
+        player.playVideo();
+      } else {
+        playSong(si); // reload and play current song
+      }
     }
   };
 })();
