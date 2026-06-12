@@ -295,80 +295,11 @@ table.tt tr:last-child td{border-bottom:none}
   transform:translateY(80px);opacity:0;transition:.3s;pointer-events:none}
 .toast.show{transform:translateY(0);opacity:1}
 
-/* ── MOBILE ──────────────────────────────────────────────────────── */
 @media(max-width:640px){
-  /* Nav */
-  nav{height:44px;padding:0 8px;gap:1px}
-  .logo{font-size:15px;margin-right:6px}
-  .nav-btn{font-size:11px;padding:4px 8px}
-  #user-pill{font-size:11px;padding:3px 9px}
-
-  /* Hero */
-  .hero{padding:22px 12px 18px}
-  .hero-title{font-size:clamp(32px,10vw,52px)}
-  .hero-stats{gap:14px;margin-top:14px}
-  .hstat-val{font-size:24px}
-  .hstat-lbl{font-size:9px}
-
-  /* Sections */
-  .sec{padding:12px 10px 60px}
-  .sec-title{font-size:22px}
-
-  /* Dashboard — 2 cards per row */
-  .dash-grid{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
-  .dcard{padding:10px 11px}
-  .dcard-val{font-size:26px}
-  .dcard-sub{font-size:10px}
-
-  /* Leaderboard */
-  .lb-row{grid-template-columns:26px 1fr 42px 42px 42px !important;gap:3px;padding:8px 10px}
-
-  /* Deadline banner */
-  .dl-banner{flex-direction:column;gap:8px}
-
-  /* Match cards */
-  .mcard{-webkit-tap-highlight-color:transparent;margin-bottom:7px}
-  .tside{padding:8px 10px}
-  .tname{font-size:12px}
-  .sc-in{width:34px;height:34px;font-size:16px}
-  .sc-sep{font-size:14px}
-
-  /* Stage tabs — scroll horizontally */
-  .stage-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap !important;padding-bottom:4px}
-  .stab{flex-shrink:0;font-size:11px;padding:5px 10px}
-
-  /* Compare */
+  .sc-in{width:28px;height:28px;font-size:13px}
+  .lb-row{grid-template-columns:26px 1fr repeat(3,42px)}
+  .dl-banner{flex-direction:column;gap:10px}
   .cmp-hd-row,.cmp-data-row{grid-template-columns:120px repeat(var(--user-count,3),minmax(120px,1fr)) 90px}
-  #cmp-content{overflow-x:auto;-webkit-overflow-scrolling:touch}
-
-  /* Groups — single column */
-  .grp-grid{grid-template-columns:1fr}
-
-  /* Leaderboard tabs */
-  #lb-tabs{gap:4px}
-  .lb-tab{font-size:11px;padding:5px 10px}
-  .lb-tab-add{width:28px;height:28px;font-size:16px}
-
-  /* Deadline cards — 2 per row */
-  #all-dl{grid-template-columns:repeat(2,1fr) !important;gap:6px}
-
-  /* Auth modal */
-  .modal{width:95vw;padding:20px 16px;border-radius:12px}
-
-  /* Bracket */
-  .br-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-
-  /* Celebration */
-  .cel-card{padding:26px 18px}
-  .cel-name{font-size:44px}
-  .cel-headline{font-size:32px}
-}
-
-/* Prevent iOS auto-zoom on input focus (must be >= 16px) */
-@media(max-width:640px){
-  input,select,textarea{font-size:16px !important}
-  .sc-in{font-size:16px !important;width:34px;height:34px}
-  .login-input.pin-input{font-size:20px !important;letter-spacing:8px}
 }
 
 /* Real bracket sub-tabs */
@@ -1312,13 +1243,6 @@ function refreshUI() {
   }
 }
 
-// Instant re-sync when user switches back to this tab
-document.addEventListener('visibilitychange', function() {
-  if(!document.hidden && FB_READY) {
-    fbGet('').then(all => { if(all && applySnapshot(all)) refreshUI(); });
-  }
-});
-
 function startRealtimeSync() {
   if(!FB_READY) return;
   if(_sseSource) { _sseSource.close(); _sseSource = null; }
@@ -1342,13 +1266,13 @@ function startRealtimeSync() {
     });
     _sseSource.onerror = () => {
       if(_sseSource) { _sseSource.close(); _sseSource = null; }
-      if(!_pollTimer) _pollTimer = setInterval(fallbackPoll, 2000);
+      if(!_pollTimer) _pollTimer = setInterval(fallbackPoll, 5000);
     };
     _sseSource.onopen = () => {
       if(_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
     };
   } catch(e) {
-    _pollTimer = setInterval(fallbackPoll, 2000);
+    _pollTimer = setInterval(fallbackPoll, 5000);
   }
 }
 
@@ -1578,26 +1502,9 @@ function stageForMatch(mid) {
   if(m[1] === '3P') return 'Final';
   return m[1];
 }
-// Per-match lock: locks at the individual match's kickoff, not the stage deadline
-function isMatchLocked(mid) {
-  const m = ALL.find(x=>x[0]===mid);
-  if(!m) return true;
-  return Date.now() >= new Date(m[8]).getTime();
-}
-// Returns a human-readable countdown string until kickoff, or null if already kicked off
-function matchTimeLeft(mid) {
-  const m = ALL.find(x=>x[0]===mid);
-  if(!m) return null;
-  const ms = new Date(m[8]).getTime() - Date.now();
-  if(ms <= 0) return null;
-  const h = Math.floor(ms/3600000), min = Math.floor((ms%3600000)/60000);
-  if(h >= 24) return `${Math.floor(h/24)}d ${h%24}h`;
-  if(h > 0) return `${h}h ${min}m`;
-  return `${min}m`;
-}
 function isPredictionLockedForMatch(mid) {
-  // Lock each match individually at its own kickoff time
-  return isMatchLocked(mid);
+  const st = stageForMatch(mid);
+  return !st || isLocked(st);
 }
 function stripLockedPredictionChanges(user, incoming) {
   const existing = lp(user) || {};
@@ -2628,10 +2535,7 @@ function renderPredList() {
       const saved = hgv!==''&&agv!=='';
       const hasResult = a && a.hg!==undefined;
 
-      // Per-match: lock at kickoff, not at stage deadline
-      const matchLocked = locked || isMatchLocked(mid);
-      const tLeft = matchTimeLeft(mid);
-      if(matchLocked) {
+      if(locked) {
         // Read-only display — no inputs
         const scoreTxt = saved
           ? `<div style="display:flex;align-items:center;gap:6px">
@@ -2677,7 +2581,6 @@ function renderPredList() {
               <input type="number" class="sc-in" id="ag-${mid}" value="${agv}" placeholder="–" min="0" max="20"
                 oninput="markChg('${mid}')" onblur="autoSave('${mid}')">
             </div>
-            ${tLeft?`<div style="font-size:9px;color:var(--gold);text-align:center;margin-top:2px;letter-spacing:.5px">⏱ ${tLeft}</div>`:''}
             ${hasResult?`<div class="result-row">${a.hg} – ${a.ag}</div><div class="result-label">Actual</div>`:''}
           </div>
           <div class="tside away"><div class="tname">${away}</div></div>
@@ -3504,7 +3407,11 @@ function renderCompare(){
       const stageLocked=stageLockedMap[stageKey]||false;
       const act=actuals[mid];
       const matchPlayed=!!(act&&act.hg!==undefined);
-      const visible=stageLocked||matchPlayed||isMatchLocked(mid); // reveal at individual match kickoff
+      const matchKickedOff=isPredictionLockedForMatch(mid);
+      // Own prediction: visible once match has kicked off
+      // Others' predictions: only visible once actual score is recorded
+      const visibleOwn = matchKickedOff || matchPlayed;
+      const visibleOthers = matchPlayed; // require actual score to reveal others
 
       const isAuto=act&&act.source&&act.source!=='manual';
       const row=document.createElement('div');
@@ -3513,14 +3420,14 @@ function renderCompare(){
 
       cmpUsers.forEach(u=>{
         const p=allPreds[u][mid];
-        if(!visible){
-          // Before deadline: show own predictions, hide others
+        const canSee = (u===currentUser) ? visibleOwn : visibleOthers;
+        if(!canSee){
           if(u===currentUser){
             html+=p&&p.hg!==undefined
               ?`<div class="cmp-cell" style="text-align:center;font-family:'Roboto Mono',monospace;font-size:13px;color:var(--gold)">${p.hg}–${p.ag}</div>`
               :`<div class="cmp-cell" style="text-align:center;color:var(--grey);font-size:11px">–</div>`;
           } else {
-            html+=`<div class="cmp-cell" style="text-align:center;color:var(--grey);font-size:11px">🔒</div>`;
+            html+=`<div class="cmp-cell" style="text-align:center;color:var(--grey);font-size:11px" title="Unlocks when actual score is recorded">🔒</div>`;
           }
         } else {
           if(!p||p.hg===undefined){
