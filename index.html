@@ -5,23 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>⚽ WC 2026 Predictions</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
-
-function applyMobileCompareLabels(){
-  document.querySelectorAll('.cmp-section').forEach(section=>{
-    const headers = Array.from(section.querySelectorAll('.cmp-hd-cell')).map(h=>h.textContent.trim());
-    section.querySelectorAll('.cmp-data-row').forEach(row=>{
-      Array.from(row.children).forEach((cell, idx)=>{
-        if(idx > 0 && idx < row.children.length - 1 && !cell.getAttribute('data-user')){
-          cell.setAttribute('data-user', headers[idx] || 'Player');
-        }
-      });
-    });
-  });
-}
-
-setInterval(applyMobileCompareLabels, 800);
-document.addEventListener('DOMContentLoaded', applyMobileCompareLabels);
-</script><style>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=MYsnvYoSXzxo7Mbgp9jZSU_159M15pZJggUZnS7k02uD6w-uowBgBcgbUZj6Qxyu2HkXUsLv93K-tSV_VOmY7HxlCNtkin2ASj_tAthk9dk-tTrV6br9hetPImgH0bkXFQK9YHAI_l06pZQE8Sm-9wf1Cp6ylsgRtHQ_JY_YvTwJYUWmw1vFEGmgLKHeUqQevbINQl74Md-I0ev4g22junUd3sgYiW0MpAX4XQUMu4PdBlzpXEARYm0H8-F-Oia2Zj-hZC-x8FIC2K8b2Fl7Spink0X8txP26PEkz1cvekarf4w9yC6pcfhL7kJL41Oh1IqtQxVT3DhZJknQ4pzAHTTphZfvW0dtHkIGOK-9qd0" charset="UTF-8"></script><style>
 :root{
   --pitch:#071a0f;--card:#0b2015;--card2:#0f2a1c;--border:#1a3a26;
   --gold:#f5c518;--gold2:#b8941a;--white:#eef4ee;--grey:#6b8a76;
@@ -514,259 +498,6 @@ table.tt tr:last-child td{border-bottom:none}
   .cmp-hd-cell,.cmp-cell{padding:7px 6px;font-size:11px}
 }
 
-
-/* ── FULL MOBILE UI UPGRADE ───────────────────────────────────────
-   Improves Dashboard, Compare, Predictions, Groups, Brackets, modals,
-   and tab navigation on phones. Desktop layout is unchanged. */
-@media(max-width:760px){
-  html,body{max-width:100%;overflow-x:hidden}
-  body{font-size:13px}
-
-  nav{
-    height:auto;
-    min-height:48px;
-    padding:7px 8px;
-    gap:5px;
-    align-items:center;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-  }
-  nav::-webkit-scrollbar{display:none}
-  .logo{font-size:18px;letter-spacing:2px;margin-right:4px}
-  .nav-btn{
-    font-size:11px;
-    padding:8px 10px;
-    border:1px solid transparent;
-    background:rgba(255,255,255,.02);
-  }
-  .nav-btn.act{border-color:rgba(245,197,24,.25)}
-  .nav-right{margin-left:0}
-  #user-pill{font-size:11px;padding:6px 10px}
-
-  .hero{padding:22px 12px 16px}
-  .hero-eye{font-size:9px;letter-spacing:3px}
-  .hero-title{font-size:clamp(34px,12vw,52px)}
-  .hero-sub{font-size:11px;line-height:1.4}
-  .hero-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:15px}
-  .hero-stats > div{
-    background:rgba(15,42,28,.55);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:8px 6px;
-  }
-  .hstat-val{font-size:26px;line-height:1}
-  .hstat-lbl{font-size:8px;letter-spacing:1px;line-height:1.2}
-
-  .sec{padding:14px 9px 54px}
-  .sec-title{font-size:24px}
-  .sec-sub{font-size:11px;line-height:1.4;margin-bottom:12px}
-
-  .stage-tabs,.toolbar,.lb-tabs{
-    display:flex;
-    flex-wrap:nowrap;
-    overflow-x:auto;
-    gap:6px;
-    padding-bottom:5px;
-    margin-bottom:12px;
-    -webkit-overflow-scrolling:touch;
-  }
-  .stage-tabs::-webkit-scrollbar,.toolbar::-webkit-scrollbar,.lb-tabs::-webkit-scrollbar{display:none}
-  .stab,.fbtn,.lb-tab{flex:0 0 auto;padding:7px 11px;font-size:11px}
-  .save-btn-main{
-    flex:0 0 auto;
-    margin-left:0;
-    padding:7px 12px;
-    border-radius:16px;
-  }
-
-  .dash-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
-  .dcard{padding:9px 10px;border-radius:10px}
-  .dcard-lbl{font-size:8px;letter-spacing:1px}
-  .dcard-val{font-size:24px}
-  .dcard-sub{font-size:10px;line-height:1.25}
-
-  .lb-wrap{border-radius:12px;overflow:hidden}
-  .lb-head{padding:10px 12px;display:block}
-  .lb-head h3{font-size:18px;margin-bottom:3px}
-  .lb-head span{display:block;font-size:10px!important;line-height:1.3}
-  .lb-row.hd{display:none}
-  .lb-row{
-    display:grid!important;
-    grid-template-columns:34px 1fr auto!important;
-    grid-template-areas:"rank name pts" "rank meta meta";
-    gap:3px 8px;
-    align-items:center;
-    padding:12px;
-    border-bottom:1px solid rgba(255,255,255,.06);
-  }
-  .lb-row .lb-rank{grid-area:rank;font-size:22px;align-self:center}
-  .lb-row > div:nth-child(2){
-    grid-area:name;
-    font-size:14px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .lb-row > div:nth-child(3),
-  .lb-row > div:nth-child(4),
-  .lb-row > div:nth-child(5),
-  .lb-row > div:nth-child(7){display:none}
-  .lb-row > div:nth-child(6){
-    grid-area:pts;
-    font-size:22px;
-    text-align:right;
-    min-width:38px;
-  }
-  .lb-row::after{
-    content:attr(data-mobile-meta);
-    grid-area:meta;
-    color:var(--grey);
-    font-family:'Roboto Mono',monospace;
-    font-size:10px;
-    line-height:1.35;
-  }
-
-  /* Predictions tab cards */
-  .mcard{
-    grid-template-columns:1fr!important;
-    margin-bottom:9px;
-    border-radius:11px;
-  }
-  .mcard .tside{
-    padding:9px 12px;
-    justify-content:flex-start;
-    text-align:left;
-    flex-direction:row;
-  }
-  .mcard .tside.away{
-    border-top:1px solid rgba(255,255,255,.04);
-  }
-  .mcard .sc-center{
-    order:3;
-    padding:9px 10px;
-    border-top:1px solid rgba(255,255,255,.05);
-  }
-  .tname{font-size:13px;white-space:normal;line-height:1.2}
-  .sc-in{width:34px;height:34px;font-size:15px}
-
-  .dl-banner{padding:10px 12px;align-items:flex-start;border-radius:10px}
-  .dl-left{width:100%}
-  .dl-stage{font-size:17px}
-  .dl-info{font-size:10px;line-height:1.35}
-  .dl-clock{width:100%;justify-content:space-between;gap:5px}
-  .dl-unit{min-width:0;flex:1;padding:5px 3px}
-  .dl-num{font-size:21px}
-
-  /* Groups tab */
-  .grp-grid{grid-template-columns:1fr;gap:10px}
-  .grp-card{border-radius:11px}
-  .grp-head{padding:8px 11px}
-  .grp-tbl th{font-size:9px;padding:5px 4px}
-  .grp-tbl td{font-size:11px;padding:6px 4px}
-  .third-wrap{overflow-x:auto}
-
-  /* Compare tab mobile: convert rows into stacked match cards */
-  .cmp-scroll{overflow-x:visible;padding-bottom:0}
-  .cmp-section{
-    overflow:visible;
-    border-radius:12px;
-    background:transparent;
-    border:none;
-    margin-bottom:12px;
-  }
-  .cmp-hd-row{display:none!important}
-  .cmp-data-row{
-    display:block!important;
-    min-width:0!important;
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:12px;
-    margin-bottom:9px;
-    overflow:hidden;
-  }
-  .cmp-cell{
-    display:block;
-    padding:8px 10px;
-    border-bottom:1px solid rgba(255,255,255,.05);
-    font-size:12px;
-  }
-  .cmp-cell:last-child{border-bottom:none}
-  .cmp-cell.match{
-    background:var(--card2);
-    color:var(--white);
-    font-size:12px;
-    font-weight:700;
-    line-height:1.35;
-  }
-  .cmp-cell.match::before{
-    content:"MATCH";
-    display:block;
-    color:var(--grey);
-    font-size:8px;
-    letter-spacing:1.5px;
-    font-weight:600;
-    margin-bottom:3px;
-  }
-  .cmp-cell:not(.match):not(:last-child){
-    display:flex;
-    justify-content:space-between;
-    gap:8px;
-    align-items:center;
-    min-height:38px;
-  }
-  .cmp-cell:not(.match):not(:last-child)::before{
-    content:attr(data-user);
-    color:var(--grey);
-    font-size:10px;
-    letter-spacing:1px;
-    text-transform:uppercase;
-    flex:0 0 auto;
-  }
-  .cmp-cell:last-child{
-    background:rgba(59,130,246,.06);
-  }
-  .cmp-cell:last-child::before{
-    content:"ACTUAL";
-    display:block;
-    color:var(--grey);
-    font-size:8px;
-    letter-spacing:1.5px;
-    font-weight:600;
-    margin-bottom:4px;
-  }
-  .actual-wrap{justify-content:flex-start}
-  .actual-in{width:52px;font-size:12px}
-  .auto-tag{font-size:8px}
-
-  /* Bracket tabs */
-  .br-scroll{
-    margin:0 -9px;
-    padding:0 9px 10px;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-  }
-  .br-tree{min-width:980px}
-  .bw{width:190px}
-  .bw.wide{width:205px}
-  .bteam{font-size:11px;padding:6px 8px}
-
-  /* Modals and celebration */
-  .modal,.adduser-modal,.grp-modal,.pin-modal{width:94vw;padding:22px 18px}
-  .cel-card{padding:30px 20px}
-  .cel-trophy{font-size:54px}
-  .cel-headline{font-size:32px}
-  .cel-name{font-size:44px}
-  .cel-podium{gap:8px}
-  .cel-pod{min-width:86px;padding:8px 10px}
-
-  .toast{
-    left:12px;
-    right:12px;
-    bottom:16px;
-    text-align:center;
-  }
-}
-
 </style>
 </head>
 <body>
@@ -1041,7 +772,7 @@ table.tt tr:last-child td{border-bottom:none}
 <!-- COMPARE -->
 <div id="compare" class="sec">
   <div class="sec-title">Compare & Results</div>
-  <div class="sec-sub">Results auto-populate once from live data · final scores lock permanently</div>
+  <div class="sec-sub">Results auto-populate from live data only · actual scores are read-only</div>
   <div class="toolbar">
     <button class="fbtn act" onclick="setCmpFilt('all',this)">All</button>
     <button class="fbtn" onclick="setCmpFilt('MD1',this)">GW1</button>
@@ -1060,57 +791,6 @@ table.tt tr:last-child td{border-bottom:none}
 // ═══════════════════════════════════════════════════════════════════
 // ── MATCH DATA ──────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
-
-// ── FINAL ACTUAL RESULTS LOCK ─────────────────────────────────────
-// Once a final result is saved for a finished match, it is treated as locked.
-// Locked results are never fetched/synced again, preventing old results from
-// changing or resetting on every login.
-
-function saveLockedActualCache(){
-  try{
-    const locked = {};
-    Object.keys(ACTUAL || {}).forEach(mid=>{
-      if(isFinalActualResult(mid)) locked[mid] = ACTUAL[mid];
-    });
-    localStorage.setItem('wc2026_locked_actuals', JSON.stringify(locked));
-  }catch(e){}
-}
-function loadLockedActualCache(){
-  try{
-    const locked = JSON.parse(localStorage.getItem('wc2026_locked_actuals') || '{}');
-    Object.keys(locked).forEach(mid=>{
-      if(!ACTUAL[mid] || !isFinalActualResult(mid)) ACTUAL[mid] = locked[mid];
-      lockActualResult(mid);
-    });
-  }catch(e){}
-}
-
-function isFinalActualResult(mid){
-  const a = ACTUAL?.[mid];
-  return !!(a && a.hg !== '' && a.ag !== '' && a.hg != null && a.ag != null && (a.locked === true || a.final === true || a.source === 'auto-final'));
-}
-
-function lockActualResult(mid){
-  if(!ACTUAL || !ACTUAL[mid]) return;
-  ACTUAL[mid].locked = true;
-  ACTUAL[mid].final = true;
-  ACTUAL[mid].source = ACTUAL[mid].source || 'auto-final';
-  ACTUAL[mid].lockedAt = ACTUAL[mid].lockedAt || new Date().toISOString();
-  saveLockedActualCache();
-}
-
-function normalizeLockedActuals(){
-  if(!ACTUAL) return;
-  Object.keys(ACTUAL).forEach(mid=>{
-    const a = ACTUAL[mid];
-    if(a && a.hg !== '' && a.ag !== '' && a.hg != null && a.ag != null){
-      if(a.locked === true || a.final === true || a.source === 'auto-final'){
-        lockActualResult(mid);
-      }
-    }
-  });
-}
-
 let USERS = ['Khairo','Moataz','Steve'];
 let COLORS = {Khairo:'#e85d04',Moataz:'#3b82f6',Steve:'#22c55e'};
 
@@ -1789,8 +1469,6 @@ async function fetchAllResults() {
 }
 
 async function syncResultToFirebase(results) {
-  if(isFinalActualResult(results)) return; // already final-locked, do not overwrite
-
   if(!results || !Object.keys(results).length) return;
   const existing = la();
   let changed = 0;
@@ -2785,8 +2463,6 @@ function saveGrpModal() {
   renderLeaderboard();
 }
 
-
-normalizeLockedActuals();
 function renderDashboard() {
   updateHeroStats();
   renderLbTabs();
@@ -3772,11 +3448,6 @@ function setCmpFilt(f,btn){
   renderCompare();
 }
 
-
-function escAttr(v){
-  return String(v ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
 function renderCompare(){
   // Use active leaderboard group's players, or all if "All Players"
   const allGroups = getAllLbGroups();
@@ -3862,7 +3533,7 @@ function renderCompare(){
       const actVal=act?`${act.hg}–${act.ag}`:'';
       html+=`<div class="cmp-cell" style="text-align:center">
         ${actVal
-          ? `<div style="display:flex;align-items:center;justify-content:center;gap:4px;font-family:'Roboto Mono',monospace;color:var(--blue);font-weight:600">${actVal}${isAuto?'<span class="auto-tag">FINAL</span>':''}</div>`
+          ? `<div style="display:flex;align-items:center;justify-content:center;gap:4px;font-family:'Roboto Mono',monospace;color:var(--blue);font-weight:600">${actVal}${isAuto?'<span class="auto-tag">AUTO</span>':''}</div>`
           : `<span style="color:var(--grey);font-size:11px">Waiting for live result</span>`}
       </div>`;
       row.innerHTML=html;
