@@ -2749,6 +2749,105 @@ function renderCompare(){
   const c=document.getElementById('cmp-content');
   c.innerHTML='';
 
+  const n = USERS.length;
+
+  // Inject dynamic grid CSS
+  const sid='cmp-grid-style';
+  let sel=document.getElementById(sid);
+  if(!sel){sel=document.createElement('style');sel.id=sid;document.head.appendChild(sel);}
+  sel.textContent=`.cmp-hd-row,.cmp-data-row{grid-template-columns:160px repeat(${n},1fr) 110px}`;
+
+  const stageLockedMap={};
+  STAGES.forEach(s=>{stageLockedMap[s.key]=isLocked(s.key);});
+
+  Object.entries(byDate).forEach(([date,ms])=>{
+    const label=new Date(date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long'});
+    const sec=document.createElement('div');
+    sec.innerHTML=`<div class="md-hdr">${label}</div>`;
+    const tbl=document.createElement('div');
+    tbl.className='cmp-section';
+    tbl.innerHTML=`<div class="cmp-hd-row">
+      <div class="cmp-hd-cell">Match</div>
+      ${USERS.map(u=>`<div class="cmp-hd-cell" style="color:${COLORS[u]||'var(--grey)'};text-align:center;font-size:11px">${u}</div>`).join('')}
+      <div class="cmp-hd-cell" style="text-align:center">Actual</div>
+    </div>`;
+
+    ms.forEach(m=>{
+      const [mid,,,,home,away]=m;
+      const stageKey=m[1];
+      const stageLocked=stageLockedMap[stageKey]||false;
+      const act=actuals[mid];
+      const matchPlayed=!!(act&&act.hg!==undefined);
+      const visible=stageLocked||matchPlayed; // show once stage locked OR match played
+
+      const isAuto=act&&act.source&&act.source!=='manual';
+      const row=document.createElement('div');
+      row.className='cmp-data-row';
+      let html=`<div class="cmp-cell match" style="font-size:11px">${home} v ${away}</div>`;
+
+      USERS.forEach(u=>{
+        const p=allPreds[u][mid];
+        if(!visible){
+          // Before deadline: show own predictions, hide others
+          if(u===currentUser){
+            html+=p&&p.hg!==undefined
+              ?`<div class="cmp-cell" style="text-align:center;font-family:'Roboto Mono',monospace;font-size:13px;color:var(--gold)">${p.hg}–${p.ag}</div>`
+              :`<div class="cmp-cell" style="text-align:center;color:var(--grey);font-size:11px">–</div>`;
+          } else {
+            html+=`<div class="cmp-cell" style="text-align:center;color:var(--grey);font-size:11px">🔒</div>`;
+          }
+        } else {
+          if(!p||p.hg===undefined){
+            html+=`<div class="cmp-cell" style="text-align:center;color:var(--grey);font-size:11px;font-style:italic">–</div>`;
+          } else {
+            let cls='';
+            if(act&&act.hg!==undefined){
+              const pr=+p.hg>+p.ag?'H':+p.hg<+p.ag?'A':'D';
+              const ar=+act.hg>+act.ag?'H':+act.hg<+act.ag?'A':'D';
+              if(+p.hg===+act.hg&&+p.ag===+act.ag)cls='cmp-exact';
+              else if(pr===ar)cls='cmp-ok';
+              else cls='cmp-no';
+            }
+            html+=`<div class="cmp-cell ${cls}" style="text-align:center;font-family:'Roboto Mono',monospace;font-size:13px">${p.hg}–${p.ag}</div>`;
+          }
+        }
+      });
+
+      const actVal=act?`${act.hg}–${act.ag}`:'';
+      html+=`<div class="cmp-cell" style="text-align:center">
+        <div style="display:flex;align-items:center;justify-content:center;gap:4px">
+          <input class="actual-in" value="${actVal}" placeholder="0–0" maxlength="5"
+            onfocus="this.style.borderColor='var(--blue)'"
+            onblur="this.style.borderColor='var(--border)';saveActual('${mid}',this.value,false)"
+            id="actual-${mid}">
+          ${isAuto?'<span class="auto-tag">AUTO</span>':''}
+        </div>
+      </div>`;
+      row.innerHTML=html;
+      tbl.appendChild(row);
+    });
+    sec.appendChild(tbl);
+    c.appendChild(sec);
+  });
+  if(!c.innerHTML)c.innerHTML='<p style="color:var(--grey);padding:16px 0">No matches found.</p>';
+}
+
+function setCmpFilt(f,btn){
+  cmpFilt=f;
+  document.querySelectorAll('#compare .fbtn:not(:last-child)').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  renderCompare();
+}
+
+function renderCompare(){
+  const allPreds={}; USERS.forEach(u=>{allPreds[u]=lp(u)});
+  const actuals=la();
+  let matches = cmpFilt==='all' ? ALL : ALL.filter(m=>m[1]===cmpFilt);
+  const byDate={};
+  matches.forEach(m=>{(byDate[m[3]]=byDate[m[3]]||[]).push(m)});
+  const c=document.getElementById('cmp-content');
+  c.innerHTML='';
+
   // Determine which stages are locked (deadline passed = visible to all)
   // A match is "visible" in compare only if its stage deadline has passed
   const stageLockedMap = {};
@@ -3037,7 +3136,13 @@ try {
 }
 </script>
 
- 
+
+
+
+
+
+
+
 
 <!-- ══ MUSIC PLAYER ════════════════════════════════════════════════ -->
 <style>
@@ -3134,12 +3239,6 @@ try {
   };
 })();
 </script>
-
-
-
-
-
-
 
 </body>
 </html>
