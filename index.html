@@ -58,17 +58,32 @@ nav{position:sticky;top:0;z-index:200;background:rgba(7,26,15,.96);backdrop-filt
 .modal p{color:var(--grey);font-size:13px;margin-bottom:20px}
 .uavatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
 /* Login form */
-.login-form{display:flex;flex-direction:column;gap:12px}
+/* ── AUTH SCREENS ──────────────────────────────────────────────── */
+.auth-screen{display:none;flex-direction:column;gap:14px}
+.auth-screen.active{display:flex}
 .login-input{width:100%;background:var(--card2);border:1px solid var(--border);color:var(--white);
   padding:12px 16px;border-radius:8px;font:500 15px 'Inter',sans-serif;outline:none;
-  letter-spacing:.5px;transition:border-color .15s}
+  letter-spacing:.5px;transition:border-color .15s;box-sizing:border-box}
 .login-input:focus{border-color:var(--gold)}
-.login-btn{width:100%;padding:13px;background:var(--gold);color:#000;border:none;border-radius:8px;
-  font:700 15px 'Inter',sans-serif;cursor:pointer;transition:.15s;margin-top:4px}
-.login-btn:hover{background:var(--gold2)}
-.login-err{color:var(--red);font-size:12px;text-align:center;min-height:18px;font-weight:500}
-.login-pin-row{display:flex;gap:10px}
-.login-pin-row .login-input{letter-spacing:8px;text-align:center;font-size:20px;font-family:'Roboto Mono',monospace}
+.login-input.pin-input{letter-spacing:8px;text-align:center;font-size:20px;
+  font-family:'Roboto Mono',monospace}
+.auth-label{font-size:10px;color:var(--grey);letter-spacing:1.5px;text-transform:uppercase;
+  margin-bottom:5px;font-weight:600}
+.auth-btn{width:100%;padding:13px;background:var(--gold);color:#000;border:none;border-radius:8px;
+  font:700 15px 'Inter',sans-serif;cursor:pointer;transition:.15s}
+.auth-btn:hover{background:var(--gold2)}
+.auth-btn:disabled{opacity:.5;cursor:not-allowed}
+.auth-btn.secondary{background:transparent;color:var(--gold);border:1px solid var(--gold);margin-top:2px}
+.auth-btn.secondary:hover{background:rgba(245,197,24,.08)}
+.auth-err{color:var(--red);font-size:12px;text-align:center;min-height:16px;font-weight:500}
+.auth-success{color:var(--green);font-size:12px;text-align:center;min-height:16px;font-weight:500}
+.auth-switch{text-align:center;margin-top:4px}
+.auth-switch-link{color:var(--gold);font-size:12px;cursor:pointer;text-decoration:underline;
+  background:none;border:none;font-family:'Inter',sans-serif;padding:0}
+.auth-switch-link:hover{color:var(--gold2)}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:2px 0}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.auth-divider span{font-size:10px;color:var(--grey);letter-spacing:1px}
 
 /* PIN MODAL */
 #pin-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:600;align-items:center;justify-content:center}
@@ -406,31 +421,64 @@ table.tt tr:last-child td{border-bottom:none}
 <!-- USER MODAL -->
 <div class="overlay show" id="user-overlay">
   <div class="modal">
-    <div style="text-align:center;margin-bottom:20px">
+
+    <!-- Header -->
+    <div style="text-align:center;margin-bottom:22px">
       <div style="font-size:32px;margin-bottom:6px">⚽</div>
       <h2 style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);letter-spacing:2px;margin:0">WC 2026 Predictions</h2>
-      <p style="color:var(--grey);font-size:12px;margin-top:6px">Enter your username and PIN to continue</p>
     </div>
-    <div class="login-form">
+
+    <!-- ── LOGIN SCREEN ── -->
+    <div class="auth-screen active" id="auth-login">
       <div>
-        <div style="font-size:11px;color:var(--grey);margin-bottom:5px;letter-spacing:1px;text-transform:uppercase">Username</div>
-        <input class="login-input" id="login-username" type="text" placeholder="Your name" maxlength="30" autocomplete="off"
-          oninput="document.getElementById('login-err').textContent=''"
+        <div class="auth-label">Username</div>
+        <input class="login-input" id="login-username" type="text" placeholder="Enter your username"
+          maxlength="30" autocomplete="off"
+          oninput="clearAuthErr('login')"
           onkeydown="if(event.key==='Enter')document.getElementById('login-pin').focus()">
       </div>
       <div>
-        <div style="font-size:11px;color:var(--grey);margin-bottom:5px;letter-spacing:1px;text-transform:uppercase">PIN</div>
-        <input class="login-input login-pin-row" id="login-pin" type="password" placeholder="••••" maxlength="4"
-          inputmode="numeric" pattern="[0-9]*" autocomplete="off"
-          oninput="this.value=this.value.replace(/[^0-9]/g,'');document.getElementById('login-err').textContent=''"
+        <div class="auth-label">4-Digit PIN</div>
+        <input class="login-input pin-input" id="login-pin" type="password" placeholder="••••"
+          maxlength="4" inputmode="numeric" autocomplete="off"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'');clearAuthErr('login')"
           onkeydown="if(event.key==='Enter')doLogin()">
       </div>
-      <div class="login-err" id="login-err"></div>
-      <button class="login-btn" onclick="doLogin()">Login →</button>
+      <div class="auth-err" id="login-err"></div>
+      <button class="auth-btn" onclick="doLogin()">Login →</button>
+      <div class="auth-divider"><span>OR</span></div>
+      <button class="auth-btn secondary" onclick="showSignup()">Create New Account</button>
     </div>
-    <div style="margin-top:14px;text-align:center;font-size:11px;color:var(--grey)">
-      New player? Ask the admin to add your account.
+
+    <!-- ── SIGNUP SCREEN ── -->
+    <div class="auth-screen" id="auth-signup">
+      <div>
+        <div class="auth-label">Choose a Username</div>
+        <input class="login-input" id="signup-username" type="text" placeholder="Your name (e.g. Ahmed)"
+          maxlength="30" autocomplete="off"
+          oninput="clearAuthErr('signup')"
+          onkeydown="if(event.key==='Enter')document.getElementById('signup-pin').focus()">
+      </div>
+      <div>
+        <div class="auth-label">Create 4-Digit PIN</div>
+        <input class="login-input pin-input" id="signup-pin" type="password" placeholder="••••"
+          maxlength="4" inputmode="numeric" autocomplete="off"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'');clearAuthErr('signup')"
+          onkeydown="if(event.key==='Enter')document.getElementById('signup-pin-confirm').focus()">
+      </div>
+      <div>
+        <div class="auth-label">Confirm PIN</div>
+        <input class="login-input pin-input" id="signup-pin-confirm" type="password" placeholder="••••"
+          maxlength="4" inputmode="numeric" autocomplete="off"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'');clearAuthErr('signup')"
+          onkeydown="if(event.key==='Enter')doSignup()">
+      </div>
+      <div class="auth-err" id="signup-err"></div>
+      <button class="auth-btn" onclick="doSignup()">Create Account →</button>
+      <div class="auth-divider"><span>OR</span></div>
+      <button class="auth-btn secondary" onclick="showLogin()">Back to Login</button>
     </div>
+
   </div>
 </div>
 
@@ -854,125 +902,122 @@ if(!FB_READY) {
 // In-memory cache so UI is fast
 const _cache = {};
 
-// ── Low-level Firebase REST helpers ─────────────────────────────────
-async function fbGet(path) {
-  if(!FB_READY) return null;
-  try {
-    const r = await fetch(`${FB_URL}/${path}.json`, {cache:'no-cache', signal: AbortSignal.timeout(6000)});
-    if(!r.ok) return null;
-    return await r.json();
-  } catch { return null; }
-}
-async function fbSet(path, data) {
-  if(!FB_READY) return;
-  try {
-    await fetch(`${FB_URL}/${path}.json`, {
-      method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data),
-      signal: AbortSignal.timeout(6000)
-    });
-  } catch(e) { }
-}
+// ══ PURE FIREBASE STORAGE — no localStorage ══════════════════════════
+// All data lives in Firebase. _cache is in-memory only (per session).
+// PINs: stored in Firebase under /pins/{user} — hash only, never plaintext
 
-// ── Storage API ───────────────────────────────────────────────────────
-// PINs: hash stored locally for verification; Firebase stores a flag so all
-// devices correctly show "PIN set" / "No PIN" in the user list
+// ── PIN helpers ───────────────────────────────────────────────────────
 function getPINHash(user) {
-  // Check local cache first, then localStorage
-  return _cache[`pin_${user}`] || localStorage.getItem(`wc2026_pin_${user}`) || null;
+  return _cache[`pin_${user}`] || null;
 }
 function setPINHash(user, pin) {
   const hash = hashPIN(pin);
-  // Save locally
-  localStorage.setItem(`wc2026_pin_${user}`, hash);
   _cache[`pin_${user}`] = hash;
-  // Save hash to Firebase so ALL devices can verify this PIN
   fbSet(`pins/${user}`, hash);
 }
-// Load PIN hashes from Firebase into local cache + localStorage
 async function loadPinStatusFromDB() {
   const pins = await fbGet('pins');
   if(!pins || typeof pins !== 'object') return;
   Object.keys(pins).forEach(u => {
     const hash = pins[u];
-    if(!hash || hash === '1') return; // skip old flag-only entries
-    // Cache the hash locally so this device can verify the PIN
-    _cache[`pin_${u}`] = hash;
-    localStorage.setItem(`wc2026_pin_${u}`, hash);
+    if(hash && hash !== '1') _cache[`pin_${u}`] = hash;
   });
 }
-function hasPIN(user) {
-  return !!getPINHash(user);
-}
+function hasPIN(user)         { return !!getPINHash(user); }
+function checkPIN(user, pin)  { return getPINHash(user) === hashPIN(pin); }
 
-// Predictions: localStorage (fast) + Firebase (sync)
-const SK = u => `wc2026_${u}`;
-const AK = 'wc2026_actuals';
-const SY = 'wc2026_syncmeta';
-
+// ── Predictions ───────────────────────────────────────────────────────
 function lp(u) {
-  // Try cache first, then localStorage
-  if(_cache[`pred_${u}`]) return _cache[`pred_${u}`];
-  try {
-    const d = JSON.parse(localStorage.getItem(SK(u)) || '{}');
-    _cache[`pred_${u}`] = d;
-    return d;
-  } catch { return {}; }
+  return _cache[`pred_${u}`] || {};
 }
 async function loadPredictions(u) {
-  // Load from Firebase, fall back to localStorage
-  const remote = await fbGet(`predictions/${u}`);
-  const local = lp(u);
-  // Merge: remote wins for keys it has, keep local for anything else
-  const merged = Object.assign({}, local, remote || {});
-  _cache[`pred_${u}`] = merged;
-  localStorage.setItem(SK(u), JSON.stringify(merged));
-  return merged;
+  const data = await fbGet(`predictions/${u}`);
+  _cache[`pred_${u}`] = data || {};
+  return _cache[`pred_${u}`];
 }
 function sp(u, data) {
   _cache[`pred_${u}`] = data;
-  localStorage.setItem(SK(u), JSON.stringify(data));
   fbSet(`predictions/${u}`, data);
 }
 
+// ── Actuals ───────────────────────────────────────────────────────────
 function la() {
-  if(_cache['actuals']) return _cache['actuals'];
-  try {
-    const d = JSON.parse(localStorage.getItem(AK) || '{}');
-    _cache['actuals'] = d;
-    return d;
-  } catch { return {}; }
+  return _cache['actuals'] || {};
 }
 async function loadActuals() {
-  const remote = await fbGet('actuals');
-  const local = la();
-  const merged = Object.assign({}, local, remote || {});
-  _cache['actuals'] = merged;
-  localStorage.setItem(AK, JSON.stringify(merged));
-  return merged;
+  const data = await fbGet('actuals');
+  _cache['actuals'] = data || {};
+  return _cache['actuals'];
 }
 function sa(data) {
   _cache['actuals'] = data;
-  localStorage.setItem(AK, JSON.stringify(data));
   fbSet('actuals', data);
 }
 
-function lsync() { try { return JSON.parse(localStorage.getItem(SY)||'{}'); } catch { return {}; } }
-function ssync(d) { /* sync meta removed */ }
-
-// Custom users: localStorage + Firebase
-const CUSTOM_USERS_KEY = 'wc2026_custom_users';
+// ── Custom users ──────────────────────────────────────────────────────
+const CUSTOM_USERS_KEY = 'wc2026_custom_users'; // kept for migration only
 function getLocalCustomUsers() {
-  try { return JSON.parse(localStorage.getItem(CUSTOM_USERS_KEY) || '[]'); } catch { return []; }
+  return _cache['custom_users'] || [];
 }
-function setLocalCustomUsers(arr) { localStorage.setItem(CUSTOM_USERS_KEY, JSON.stringify(arr)); }
+function setLocalCustomUsers(arr) {
+  _cache['custom_users'] = arr;
+}
 async function loadCustomUsersFromDB() {
   const remote = await fbGet('custom_users');
   if(!remote) return [];
-  // Firebase stores arrays as objects {"0":{...},"1":{...}} — convert either way
   if(Array.isArray(remote)) return remote.filter(Boolean);
   if(typeof remote === 'object') return Object.values(remote).filter(Boolean);
   return [];
 }
+
+// ── Leaderboard groups ────────────────────────────────────────────────
+const LB_GROUPS_KEY = 'wc2026_lb_groups'; // kept for compat
+function loadLbGroups() {
+  return _cache['lb_groups'] || null;
+}
+function saveLbGroups(groups) {
+  _cache['lb_groups'] = groups;
+  fbSet('lb_groups', groups);
+}
+
+// ── Real bracket ──────────────────────────────────────────────────────
+const REAL_BR_KEY = 'wc2026_real_bracket';
+function loadRealBracket() {
+  return _cache['real_bracket'] || {};
+}
+function saveRealBracket(data) {
+  _cache['real_bracket'] = data;
+  fbSet('real_bracket', data);
+}
+
+// ── Pred brackets (per user) ──────────────────────────────────────────
+const PRED_BR_KEY = u => `wc2026_pred_bracket_${u}`;
+function loadPredBracket(user) {
+  return _cache[`pred_br_${user}`] || {};
+}
+function savePredBracket(user, data) {
+  _cache[`pred_br_${user}`] = data;
+  fbSet(`pred_brackets/${user}`, data);
+}
+
+// ── Celebration shown flags ───────────────────────────────────────────
+const CEL_SHOWN_KEY = 'wc2026_cel_shown';
+function getCelShown()          { return _cache['cel_shown'] || []; }
+function markCelShown(key) {
+  const shown = getCelShown();
+  if(!shown.includes(key)) {
+    shown.push(key);
+    _cache['cel_shown'] = shown;
+    // Store per-user if logged in
+    if(currentUser) fbSet(`cel_shown/${currentUser}`, shown);
+  }
+}
+function wasCelShown(key) { return getCelShown().includes(key); }
+
+// Sync meta (no-op now — kept for compat)
+function lsync() { return {}; }
+function ssync(d) {}
+
 
 // ── Bootstrap: pull everything from Firebase ─────────────────────────
 async function bootstrapData() {
@@ -1003,7 +1048,7 @@ async function bootstrapData() {
         const hash = all.pins[u];
         if(hash && hash !== '1') {
           _cache[`pin_${u}`] = hash;
-          localStorage.setItem(`wc2026_pin_${u}`, hash);
+
         }
       });
     }
@@ -1015,7 +1060,6 @@ async function bootstrapData() {
       const local = lp(u);
       const merged2 = Object.assign({}, local, remote);
       _cache[`pred_${u}`] = merged2;
-      localStorage.setItem(`wc2026_${u}`, JSON.stringify(merged2));
     });
 
     // ── Parse actuals ───────────────────────────────────────────────
@@ -1023,7 +1067,6 @@ async function bootstrapData() {
       const localAct = la();
       const mergedAct = Object.assign({}, localAct, all.actuals);
       _cache['actuals'] = mergedAct;
-      localStorage.setItem('wc2026_actuals', JSON.stringify(mergedAct));
     }
 
     // Seed Moataz if empty
@@ -1115,7 +1158,6 @@ function applySnapshot(all) {
       const hash = all.pins[u];
       if(hash && hash !== '1') {
         _cache[`pin_${u}`] = hash;
-        localStorage.setItem(`wc2026_pin_${u}`, hash);
       }
     });
   }
@@ -1124,27 +1166,33 @@ function applySnapshot(all) {
   USERS.forEach(u => {
     const merged2 = Object.assign({}, lp(u), preds[u] || {});
     _cache[`pred_${u}`] = merged2;
-    localStorage.setItem(`wc2026_${u}`, JSON.stringify(merged2));
+
   });
+  // Leaderboard groups — sync across all devices
+  if(all.lb_groups && Array.isArray(all.lb_groups)) {
+    const local = loadLbGroups() || [];
+    // Merge: remote wins for custom groups
+    const merged = [...all.lb_groups.filter(g=>!g.builtin)];
+    _cache['lb_groups'] = merged;
+    renderLbTabs();
+  }
   // Prediction brackets (per user click-to-advance state)
   if(all.pred_brackets && typeof all.pred_brackets === 'object') {
     Object.keys(all.pred_brackets).forEach(u => {
       const k = PRED_BR_KEY(u);
-      _cache[k] = all.pred_brackets[u];
-      localStorage.setItem(k, JSON.stringify(all.pred_brackets[u]));
+      _cache[`pred_br_${u}`] = all.pred_brackets[u];
     });
     if(document.getElementById('bracket-pred')?.classList.contains('act')) renderBracketPred();
   }
   // Real bracket
   if(all.real_bracket && typeof all.real_bracket === 'object') {
     _cache['real_bracket'] = all.real_bracket;
-    localStorage.setItem('wc2026_real_bracket', JSON.stringify(all.real_bracket));
   }
   // Actuals
   if(all.actuals) {
     const mergedAct = Object.assign({}, la(), all.actuals);
     _cache['actuals'] = mergedAct;
-    localStorage.setItem('wc2026_actuals', JSON.stringify(mergedAct));
+
   }
   const snapAfter = JSON.stringify({
     users: getLocalCustomUsers().map(u=>u.name).join(','),
@@ -1545,7 +1593,9 @@ let _pinUser = null, _pinColor = null, _pinBuffer = '', _pinMode = 'enter'; // '
 let _pinConfirmBuffer = '';
 
 function openUserModal() {
-  // Reset form
+  // Always reset to login screen
+  document.getElementById('auth-login')?.classList.add('active');
+  document.getElementById('auth-signup')?.classList.remove('active');
   const u = document.getElementById('login-username');
   const p = document.getElementById('login-pin');
   const e = document.getElementById('login-err');
@@ -1553,55 +1603,133 @@ function openUserModal() {
   if(p) p.value = '';
   if(e) e.textContent = '';
   document.getElementById('user-overlay').classList.add('show');
-  setTimeout(()=>{ if(u) u.focus(); }, 100);
+  setTimeout(() => { if(u) u.focus(); }, 100);
 }
 
 
+// ── AUTH SCREEN SWITCHING ─────────────────────────────────────────────
+function showLogin() {
+  document.getElementById('auth-login').classList.add('active');
+  document.getElementById('auth-signup').classList.remove('active');
+  clearAuthErr('login');
+  clearAuthErr('signup');
+  setTimeout(() => document.getElementById('login-username').focus(), 100);
+}
+
+function showSignup() {
+  document.getElementById('auth-login').classList.remove('active');
+  document.getElementById('auth-signup').classList.add('active');
+  clearAuthErr('login');
+  clearAuthErr('signup');
+  setTimeout(() => document.getElementById('signup-username').focus(), 100);
+}
+
+function clearAuthErr(screen) {
+  const el = document.getElementById(screen + '-err');
+  if(el) el.textContent = '';
+}
+
+function setAuthErr(screen, msg) {
+  const el = document.getElementById(screen + '-err');
+  if(el) el.textContent = msg;
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────
 function doLogin() {
-  const username = (document.getElementById('login-username').value||'').trim();
-  const pin      = (document.getElementById('login-pin').value||'').trim();
-  const errEl    = document.getElementById('login-err');
+  const username = (document.getElementById('login-username').value || '').trim();
+  const pin      = (document.getElementById('login-pin').value || '').trim();
 
-  if(!username) { errEl.textContent = 'Please enter your username'; return; }
-  if(!pin)      { errEl.textContent = 'Please enter your PIN'; return; }
+  if(!username) { setAuthErr('login', 'Please enter your username'); return; }
+  if(!pin)      { setAuthErr('login', 'Please enter your PIN'); return; }
 
-  // Find user (case-insensitive match)
   const all = getAllUsers();
   const match = all.find(u => u.name.toLowerCase() === username.toLowerCase());
 
-  if(!match) { errEl.textContent = 'Invalid username or PIN'; return; }
-
-  if(!hasPIN(match.name)) {
-    // First time — set up PIN via existing flow
-    document.getElementById('user-overlay').classList.remove('show');
-    _pinUser = match.name; _pinColor = match.color;
-    _pinBuffer = pin; // pre-fill with what they typed
-    _pinMode = 'setup';
-    document.getElementById('pm-title').textContent = 'Create Your PIN';
-    document.getElementById('pm-sub').textContent = `${match.name}, confirm your 4-digit PIN`;
-    _pinConfirmBuffer = pin;
-    _pinBuffer = '';
-    _pinMode = 'confirm';
-    document.getElementById('pin-overlay').classList.add('show');
-    updatePinDots();
-    return;
-  }
+  if(!match) { setAuthErr('login', 'Invalid username or PIN'); return; }
 
   if(isAuthenticated(match.name)) {
-    // Already authenticated this session
     document.getElementById('user-overlay').classList.remove('show');
     finishLogin(match.name, match.color);
     return;
   }
 
-  if(checkPIN(match.name, pin)) {
+  if(!hasPIN(match.name) || checkPIN(match.name, pin)) {
+    if(!hasPIN(match.name)) setPINHash(match.name, pin);
     authenticate(match.name);
     document.getElementById('user-overlay').classList.remove('show');
     finishLogin(match.name, match.color);
   } else {
-    errEl.textContent = 'Invalid username or PIN';
+    setAuthErr('login', 'Invalid username or PIN');
     document.getElementById('login-pin').value = '';
     document.getElementById('login-pin').focus();
+  }
+}
+
+// ── SIGNUP ────────────────────────────────────────────────────────────
+async function doSignup() {
+  const username   = (document.getElementById('signup-username').value || '').trim();
+  const pin        = (document.getElementById('signup-pin').value || '').trim();
+  const pinConfirm = (document.getElementById('signup-pin-confirm').value || '').trim();
+
+  if(!username || username.length < 2) {
+    setAuthErr('signup', 'Username must be at least 2 characters'); return;
+  }
+  if(pin.length !== 4) {
+    setAuthErr('signup', 'PIN must be exactly 4 digits'); return;
+  }
+  if(pin !== pinConfirm) {
+    setAuthErr('signup', 'PINs do not match');
+    document.getElementById('signup-pin-confirm').value = '';
+    document.getElementById('signup-pin-confirm').focus();
+    return;
+  }
+
+  // Check username not taken
+  const all = getAllUsers();
+  if(all.find(u => u.name.toLowerCase() === username.toLowerCase())) {
+    setAuthErr('signup', 'Username already exists. Choose a different name.');
+    return;
+  }
+
+  // Pick a color not already used
+  const usedColors = all.map(u => u.color);
+  const AVAIL = ['#e85d04','#3b82f6','#22c55e','#a855f7','#f59e0b','#ec4899',
+                 '#06b6d4','#84cc16','#ef4444','#8b5cf6','#f97316','#14b8a6'];
+  const color = AVAIL.find(c => !usedColors.includes(c)) || '#' + Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0');
+
+  // Disable button
+  const btn = document.querySelector('#auth-signup .auth-btn');
+  if(btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
+
+  try {
+    // Add to custom users in Firebase
+    const customUsers = getLocalCustomUsers();
+    const newUser = {name: username, color};
+    customUsers.push(newUser);
+    setLocalCustomUsers(customUsers);
+
+    // Write to Firebase as name-keyed object
+    const existingFB = await fbGet('custom_users');
+    const fbObj = {};
+    if(existingFB && typeof existingFB === 'object') {
+      Object.values(existingFB).filter(Boolean).forEach(u => { if(u.name) fbObj[u.name] = u; });
+    }
+    fbObj[username] = newUser;
+    await fbSet('custom_users', fbObj);
+
+    // Set PIN
+    setPINHash(username, pin);
+    authenticate(username);
+    syncUserGlobals();
+
+    // Auto login
+    document.getElementById('user-overlay').classList.remove('show');
+    finishLogin(username, color);
+    showToast(`✅ Welcome ${username}! Account created.`);
+
+  } catch(e) {
+    setAuthErr('signup', 'Error creating account. Please try again.');
+    if(btn) { btn.disabled = false; btn.textContent = 'Create Account →'; }
   }
 }
 
@@ -1677,11 +1805,10 @@ async function deleteUser(name) {
   await fbSet(`predictions/${name}`, null);
   await fbSet(`pins/${name}`, null);
 
-  // Remove from local cache and localStorage
+  // Remove from cache
   delete _cache[`pred_${name}`];
   delete _cache[`pin_${name}`];
-  localStorage.removeItem(`wc2026_${name}`);
-  localStorage.removeItem(`wc2026_pin_${name}`);
+
 
   syncUserGlobals();
   rebuildUserModalList();
@@ -1799,7 +1926,7 @@ document.addEventListener('keydown', e => {
 // ═══════════════════════════════════════════════════════════════════
 // ── DYNAMIC USERS ───────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
-// Built-in users + any custom users stored in localStorage
+// Built-in users + custom users stored in Firebase
 const BUILTIN_USERS = [
   {name:'Khairo', color:'#e85d04'},
   {name:'Moataz', color:'#3b82f6'},
@@ -1925,13 +2052,11 @@ function updateHeroStats() {
 // ═══════════════════════════════════════════════════════════════════
 // ── LEADERBOARD GROUPS ──────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
-const LB_GROUPS_KEY = 'wc2026_lb_groups';
+// (defined in storage layer)
 
-function loadLbGroups() {
-  try { return JSON.parse(localStorage.getItem(LB_GROUPS_KEY)||'null'); } catch { return null; }
-}
+// (defined in storage layer)
 function saveLbGroups(groups) {
-  localStorage.setItem(LB_GROUPS_KEY, JSON.stringify(groups));
+
   fbSet('lb_groups', groups);
 }
 function getAllLbGroups() {
@@ -1954,13 +2079,10 @@ let _editingGrpId = null; // null = new group, string = editing existing
 
 // ── Tab visibility: only show tab to logged-in user if they are in that group
 function visibleGroupsForCurrentUser() {
-  const all = getAllLbGroups();
-  return all.filter(g => {
-    if(g.id === 'all') return true; // always visible
-    if(!g.visible || g.visible === 'all') return true;
-    if(!currentUser) return false;
-    return (g.visible || g.players || []).includes(currentUser);
-  });
+  // All logged-in users see all groups — the leaderboard filters correctly per group
+  // No need to hide tabs since data isn't sensitive
+  if(!currentUser) return getAllLbGroups().filter(g => g.id === 'all');
+  return getAllLbGroups();
 }
 
 function renderLbTabs() {
@@ -2114,9 +2236,9 @@ function saveGrpModal() {
   if(!name){ document.getElementById('grp-modal-name').style.borderColor='var(--red)'; return; }
   if(_grpSel.size<1){ showToast('Select at least 1 player'); return; }
 
-  const players = [..._grpSel];
-  // visible = only selected players can see this tab
-  const visible = players;
+  const players = [..._grpSel].filter(p => USERS.includes(p)); // only valid current users
+  // visible = same as players (case-sensitive exact names from USERS)
+  const visible = [...players];
 
   const existing = (loadLbGroups()||[]);
 
@@ -2397,25 +2519,25 @@ function setFilt(f,btn){
 // ═══════════════════════════════════════════════════════════════════
 
 // ── BRACKET SHARED HELPERS ──────────────────────────────────────────
-const REAL_BR_KEY  = 'wc2026_real_bracket';
-const PRED_BR_KEY  = u => `wc2026_pred_bracket_${u}`;
+// dup removed
+// dup removed
 
 function loadRealBracket() {
-  return _cache['real_bracket'] || JSON.parse(localStorage.getItem(REAL_BR_KEY) || '{}');
+  return _cache['real_bracket'] || {};
 }
 function saveRealBracket(data) {
   _cache['real_bracket'] = data;
-  localStorage.setItem(REAL_BR_KEY, JSON.stringify(data));
+
   fbSet('real_bracket', data);
 }
 function loadPredBracket(user) {
   const k = PRED_BR_KEY(user);
-  return _cache[k] || JSON.parse(localStorage.getItem(k) || '{}');
+  return _cache[`pred_br_${user}`] || {};
 }
 function savePredBracket(user, data) {
   const k = PRED_BR_KEY(user);
   _cache[k] = data;
-  localStorage.setItem(k, JSON.stringify(data));
+
   fbSet(`pred_brackets/${user}`, data);
 }
 
@@ -2900,11 +3022,11 @@ function renderRealGroups() {
 // ── REAL BRACKET (click-to-advance, driven by actual results) ────────
 // REAL_BR_KEY defined above in BRACKET SHARED HELPERS
 function loadRealBracket() {
-  return _cache['real_bracket'] || JSON.parse(localStorage.getItem(REAL_BR_KEY) || '{}');
+  return _cache['real_bracket'] || {};
 }
 function saveRealBracket(data) {
   _cache['real_bracket'] = data;
-  localStorage.setItem(REAL_BR_KEY, JSON.stringify(data));
+
   fbSet('real_bracket', data);
 }
 function saveRealSlot(input) {
@@ -3239,14 +3361,14 @@ function toast(msg){ showToast(msg); }
 // ════════════════════════════════════════════════════════════════════
 // ── CELEBRATION SYSTEM ──────────────────────────────────────────────
 // ════════════════════════════════════════════════════════════════════
-const CEL_SHOWN_KEY = 'wc2026_cel_shown';
+// (defined in storage layer)
 
 function getCelShown() {
-  try { return JSON.parse(localStorage.getItem(CEL_SHOWN_KEY) || '[]'); } catch { return []; }
+  return _cache['cel_shown'] || [];
 }
 function markCelShown(stageKey) {
   const shown = getCelShown();
-  if (!shown.includes(stageKey)) { shown.push(stageKey); localStorage.setItem(CEL_SHOWN_KEY, JSON.stringify(shown)); }
+  const shown2 = getCelShown(); if(!shown2.includes(stageKey)){shown2.push(stageKey);_cache['cel_shown']=shown2;if(currentUser)fbSet(`cel_shown/${currentUser}`,shown2);}
 }
 function wasCelShown(stageKey) { return getCelShown().includes(stageKey); }
 
