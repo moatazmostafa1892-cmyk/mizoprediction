@@ -9,3 +9,6 @@
   from = "/"
   to = "/wc2026_predictions.html"
   status = 200
+
+[functions."sync-results"]
+  schedule = "*/5 * * * *"
