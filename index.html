@@ -3039,112 +3039,104 @@ try {
 
  
 
-
-
-
-
 <!-- ══ MUSIC PLAYER ════════════════════════════════════════════════ -->
 <style>
-#music-widget{
-  position:fixed;bottom:16px;right:16px;z-index:400;
-  background:rgba(7,26,15,.95);border:1px solid var(--gold);
-  border-radius:12px;padding:8px 12px;display:flex;align-items:center;gap:10px;
-  box-shadow:0 4px 20px rgba(0,0,0,.5);cursor:pointer;
-  font-family:'Inter',sans-serif;
-}
-#music-widget:hover{background:rgba(15,42,28,.98)}
-#music-toggle{
-  width:32px;height:32px;border-radius:50%;
-  background:var(--gold);border:none;color:#000;
-  font-size:14px;cursor:pointer;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;font-weight:700;
-}
-#music-label{font-size:11px;color:var(--gold);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#music-sub{font-size:9px;color:var(--grey);margin-top:1px}
-#yt-frame{display:none;width:1px;height:1px}
+#music-widget{position:fixed;bottom:16px;right:16px;z-index:400;background:rgba(7,26,15,.96);
+  border:1px solid var(--gold);border-radius:12px;padding:8px 14px;
+  display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+#music-toggle{width:34px;height:34px;border-radius:50%;background:var(--gold);border:none;
+  color:#000;font-size:15px;cursor:pointer;flex-shrink:0;font-weight:700;line-height:1}
+#music-info{max-width:150px}
+#music-label{font-size:11px;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#music-sub{font-size:9px;color:var(--grey);margin-top:2px}
 </style>
 
-<div id="music-widget" onclick="musicWidgetClick()">
-  <button id="music-toggle" onclick="event.stopPropagation();musicToggle()">▶</button>
-  <div>
+<div id="music-widget">
+  <button id="music-toggle" onclick="musicToggle()">▶</button>
+  <div id="music-info">
     <div id="music-label">🎵 WC 2026 Anthems</div>
-    <div id="music-sub">Click ▶ to play</div>
+    <div id="music-sub">Press ▶ to play</div>
   </div>
-  <div style="font-size:10px;color:var(--grey);margin-left:4px">🔊</div>
 </div>
 
-<!-- Actual YouTube iframe — must be visible (even 1px) for autoplay to work -->
-<div style="position:fixed;bottom:0;right:0;width:1px;height:1px;overflow:hidden;opacity:0.01;pointer-events:none">
-  <iframe id="yt-frame"
-    style="width:200px;height:150px;display:block"
-    allow="autoplay; encrypted-media"
-    allowfullscreen
-    frameborder="0">
-  </iframe>
+<!-- YT API needs a div — it replaces it with an iframe itself -->
+<div id="yt-container" style="position:fixed;bottom:0;right:0;width:2px;height:2px;overflow:hidden;opacity:0.01;pointer-events:none;z-index:-1">
+  <div id="yt-div"></div>
 </div>
 
 <script>
-var SONGS = [
-  {id:"HaaqDQSmxNI", title:"Dai Dai", artist:"Shakira & Burna Boy"},
-  {id:"ZF-hKFBWcJk", title:"Waving Flag", artist:"K'naan"},
-];
-var si = 0, isPlaying = false, clipTimer = null, CLIP = 60;
-var ytReady = false, ytPlayer = null;
+(function(){
+  var SONGS = [
+    {id:"HaaqDQSmxNI", title:"Dai Dai", artist:"Shakira & Burna Boy"},
+    {id:"ZF-hKFBWcJk", title:"Waving Flag", artist:"K'naan"},
+  ];
+  var si=0, playing=false, clipTimer=null, CLIP=60, player=null, apiReady=false;
 
-// Load YT API
-var ytScript = document.createElement('script');
-ytScript.src = 'https://www.youtube.com/iframe_api';
-document.head.appendChild(ytScript);
+  // Load YT IFrame API
+  var s=document.createElement('script');
+  s.src='https://www.youtube.com/iframe_api';
+  document.head.appendChild(s);
 
-window.onYouTubeIframeAPIReady = function(){
-  ytReady = true;
-  ytPlayer = new YT.Player('yt-frame', {
-    videoId: SONGS[0].id,
-    playerVars:{controls:0,disablekb:1,fs:0,rel:0,playsinline:1,iv_load_policy:3,modestbranding:1},
-    events:{
-      onReady: function(e){ e.target.setVolume(30); updateWidget(); },
-      onStateChange: function(e){
-        if(e.data===YT.PlayerState.ENDED){ skipSong(1); }
-        if(e.data===YT.PlayerState.PLAYING){
-          isPlaying=true;
-          document.getElementById('music-toggle').textContent='⏸';
-          clearTimeout(clipTimer);
-          clipTimer=setTimeout(function(){ skipSong(1); }, CLIP*1000);
-        }
-        if(e.data===YT.PlayerState.PAUSED){
-          isPlaying=false;
-          document.getElementById('music-toggle').textContent='▶';
-          clearTimeout(clipTimer);
-        }
-      },
-      onError: function(){ skipSong(1); }
+  window.onYouTubeIframeAPIReady=function(){
+    apiReady=true;
+    player=new YT.Player('yt-div',{
+      width:'200',height:'150',
+      videoId:SONGS[0].id,
+      playerVars:{autoplay:0,controls:0,disablekb:1,fs:0,
+        iv_load_policy:3,modestbranding:1,rel:0,playsinline:1},
+      events:{
+        onReady:function(e){
+          e.target.setVolume(30);
+          updateLabel();
+        },
+        onStateChange:function(e){
+          if(e.data===YT.PlayerState.PLAYING){
+            playing=true;
+            document.getElementById('music-toggle').textContent='⏸';
+            clearTimeout(clipTimer);
+            clipTimer=setTimeout(nextSong,CLIP*1000);
+          }
+          if(e.data===YT.PlayerState.PAUSED||e.data===YT.PlayerState.BUFFERING){
+            if(e.data===YT.PlayerState.PAUSED){
+              playing=false;
+              document.getElementById('music-toggle').textContent='▶';
+              clearTimeout(clipTimer);
+            }
+          }
+          if(e.data===YT.PlayerState.ENDED) nextSong();
+        },
+        onError:function(){ nextSong(); }
+      }
+    });
+  };
+
+  function nextSong(){
+    clearTimeout(clipTimer);
+    si=(si+1)%SONGS.length;
+    if(player&&player.loadVideoById){
+      player.loadVideoById(SONGS[si].id);
     }
-  });
-};
+    updateLabel();
+  }
 
-function musicToggle(){
-  if(!ytPlayer) return;
-  if(isPlaying){ ytPlayer.pauseVideo(); }
-  else { ytPlayer.playVideo(); }
-}
+  function updateLabel(){
+    document.getElementById('music-label').textContent='🎵 '+SONGS[si].title;
+    document.getElementById('music-sub').textContent=SONGS[si].artist;
+  }
 
-function skipSong(dir){
-  clearTimeout(clipTimer);
-  si=(si+dir+SONGS.length)%SONGS.length;
-  if(ytPlayer){ ytPlayer.loadVideoById(SONGS[si].id); }
-  updateWidget();
-}
-
-function updateWidget(){
-  var s=SONGS[si];
-  document.getElementById('music-label').textContent='🎵 '+s.title;
-  document.getElementById('music-sub').textContent=s.artist;
-}
-
-function musicWidgetClick(){
-  // clicking the widget (not the button) skips to next song
-}
+  window.musicToggle=function(){
+    if(!player||!apiReady) return;
+    if(playing){
+      player.pauseVideo();
+    } else {
+      player.playVideo();
+    }
+  };
+})();
 </script>
+
+
+
 
 
 
