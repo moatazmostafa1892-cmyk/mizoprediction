@@ -688,7 +688,7 @@ table.tt tr:last-child td{border-bottom:none}
 <!-- COMPARE -->
 <div id="compare" class="sec">
   <div class="sec-title">Compare & Results</div>
-  <div class="sec-sub">Results auto-populate from live data · green = correct result · gold = exact score · manual entry also supported</div>
+  <div class="sec-sub">Results auto-populate from live data only · actual scores are read-only</div>
   <div class="toolbar">
     <button class="fbtn act" onclick="setCmpFilt('all',this)">All</button>
     <button class="fbtn" onclick="setCmpFilt('MD1',this)">GW1</button>
@@ -3448,13 +3448,9 @@ function renderCompare(){
 
       const actVal=act?`${act.hg}–${act.ag}`:'';
       html+=`<div class="cmp-cell" style="text-align:center">
-        <div style="display:flex;align-items:center;justify-content:center;gap:4px">
-          <input class="actual-in" value="${actVal}" placeholder="0–0" maxlength="5"
-            onfocus="this.style.borderColor='var(--blue)'"
-            onblur="this.style.borderColor='var(--border)';saveActual('${mid}',this.value,false)"
-            id="actual-${mid}">
-          ${isAuto?'<span class="auto-tag">AUTO</span>':''}
-        </div>
+        ${actVal
+          ? `<div style="display:flex;align-items:center;justify-content:center;gap:4px;font-family:'Roboto Mono',monospace;color:var(--blue);font-weight:600">${actVal}${isAuto?'<span class="auto-tag">AUTO</span>':''}</div>`
+          : `<span style="color:var(--grey);font-size:11px">Waiting for live result</span>`}
       </div>`;
       row.innerHTML=html;
       tbl.appendChild(row);
@@ -3474,20 +3470,20 @@ function setCmpFilt(f,btn){
 
 
 function saveActual(mid, val, isAuto=false) {
-  val=val.trim(); if(!val) return;
+  // Manual actual-score entry is disabled. Results must come only from the live/API sync.
+  if(!isAuto) return;
+  val=String(val||'').trim(); if(!val) return;
   const pts=val.split(/[-–]/); if(pts.length!==2) return;
   const hg=+pts[0], ag=+pts[1]; if(isNaN(hg)||isNaN(ag)) return;
   const actuals=la();
-  actuals[mid]={hg, ag, source:isAuto?'api':'manual', ts:Date.now()};
+  actuals[mid]={hg, ag, source:'api', ts:Date.now()};
   sa(actuals);
   updateHeroStats();
   renderDashboard();
-  // Refresh real standings if that tab is open
   if(document.getElementById('bracket-real')?.classList.contains('act') &&
      document.getElementById('real-groups-panel')?.style.display !== 'none') {
     renderRealGroups();
   }
-  if(!isAuto) toast(`✓ Actual saved: ${mid} ${hg}–${ag}`);
   setTimeout(checkStageCompletions, 500);
 }
 
@@ -3516,56 +3512,41 @@ function markCelShown(stageKey) {
 }
 function wasCelShown(stageKey) { return getCelShown().includes(stageKey); }
 
-// Stage completion labels and emojis
-const STAGE_CEL = {
-  MD1:  { emoji:'⚽', headline:'Matchday 1 Leader', title:'After Matchday 1' },
-  MD2:  { emoji:'⚽', headline:'Matchday 2 Leader', title:'After Matchday 2' },
-  MD3:  { emoji:'🌟', headline:'Group Stage Leader', title:'Group Stage Complete' },
-  R32:  { emoji:'🔥', headline:'R32 Stage Leader',   title:'Round of 32 Complete' },
-  R16:  { emoji:'💥', headline:'Last 16 Leader',     title:'Round of 16 Complete' },
-  QF:   { emoji:'🚀', headline:'Quarter-Final Leader',title:'Quarter-Finals Done' },
-  SF:   { emoji:'👑', headline:'Semi-Final Leader',   title:'Semi-Finals Done' },
-  Final:{ emoji:'🏆', headline:'WORLD CUP CHAMPION', title:'Tournament Complete' },
-};
+// Group-stage winner popup only
+const GROUP_STAGE_CEL_KEY = 'GROUP_STAGE_COMPLETE';
 
 function checkStageCompletions() {
-  // For each locked stage, if celebration hasn't been shown yet, show it
-  for (const stage of STAGES) {
-    if (!isLocked(stage.key)) break; // only show for completed stages in order
-    if (!wasCelShown(stage.key)) {
-      // Check if we have enough scored matches to make it meaningful
-      const actuals = la();
-      const scored = stage.mids.filter(mid => actuals[mid] !== undefined).length;
-      if (scored === 0) continue; // no results yet for this stage
-      showCelebration(stage.key);
-      return; // show one at a time
-    }
-  }
+  // Show the winner popup only once, only after the full group stage is complete.
+  if (wasCelShown(GROUP_STAGE_CEL_KEY)) return;
+
+  const md3Stage = STAGES.find(s => s.key === 'MD3');
+  if (!md3Stage || !isLocked('MD3')) return;
+
+  const actuals = la();
+  const groupStageMids = GM.map(m => m[0]);
+  const allGroupMatchesScored = groupStageMids.every(mid => actuals[mid] !== undefined);
+  if (!allGroupMatchesScored) return;
+
+  showCelebration(GROUP_STAGE_CEL_KEY);
 }
 
 function showCelebration(stageKey) {
   const sorted = USERS.map(u => ({ u, ...score(u) })).sort((a,b) => b.pts - a.pts || b.correct - a.correct);
-  if (!sorted.length || sorted[0].pts === 0) return; // no points yet
+  if (!sorted.length || sorted[0].pts === 0) return;
 
-  const cel = STAGE_CEL[stageKey] || { emoji:'🏆', headline:'Stage Leader', title:stageKey };
   const leader = sorted[0];
 
-  document.getElementById('cel-trophy').textContent = cel.emoji;
-  document.getElementById('cel-stage').textContent  = cel.title;
-  document.getElementById('cel-headline').textContent = cel.headline;
+  document.getElementById('cel-trophy').textContent = '🏆';
+  document.getElementById('cel-stage').textContent  = 'Group Stage Complete';
+  document.getElementById('cel-headline').textContent = 'Winner';
   document.getElementById('cel-name').textContent   = leader.u.toUpperCase();
   document.getElementById('cel-name').style.color   = COLORS[leader.u] || 'var(--gold)';
-  document.getElementById('cel-pts').innerHTML =
-    `with <strong>${leader.pts} pts</strong> &nbsp;·&nbsp; ${leader.correct} correct · ${leader.exact} exact`;
 
-  // Podium
+  // Show only the winner name — no points, no correct/exact details, no podium.
+  const pts = document.getElementById('cel-pts');
+  if (pts) pts.innerHTML = '';
   const podium = document.getElementById('cel-podium');
-  podium.innerHTML = sorted.map((s, i) => `
-    <div class="cel-pod cel-rank-${i+1}">
-      <div class="cel-pod-rank" style="color:${i===0?COLORS[s.u]||'var(--gold)':i===1?'#c0c0c0':'#cd7f32'}">${i+1}</div>
-      <div class="cel-pod-name" style="color:${COLORS[s.u]}">${s.u}</div>
-      <div class="cel-pod-pts">${s.pts} pts</div>
-    </div>`).join('');
+  if (podium) podium.innerHTML = '';
 
   document.getElementById('celebration').classList.add('show');
   startConfetti();
@@ -3575,8 +3556,6 @@ function showCelebration(stageKey) {
 function closeCelebration() {
   document.getElementById('celebration').classList.remove('show');
   stopConfetti();
-  // Check if next stage also needs celebrating
-  setTimeout(checkStageCompletions, 800);
 }
 
 // ── CONFETTI ENGINE ──────────────────────────────────────────────────
