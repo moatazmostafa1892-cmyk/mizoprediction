@@ -1862,31 +1862,76 @@ function saveLbGroups(groups) {
 function getAllLbGroups() {
   const saved = loadLbGroups();
   const defaults = [
-    {id:'all',  name:'All Players', players:null,  builtin:true},
-    {id:'main', name:'Khairo · Moataz · Steve', players:['Khairo','Moataz','Steve'], builtin:true},
+    {id:'all',  name:'All Players',             players:null, builtin:true,  visible:'all'},
+    {id:'main', name:'Khairo · Moataz · Steve', players:['Khairo','Moataz','Steve'], builtin:false, visible:['Khairo','Moataz','Steve']},
   ];
   if(!saved) return defaults;
-  return [...defaults, ...saved.filter(g=>!g.builtin)];
+  // Merge: keep "all" default + saved (which includes edited "main")
+  const savedMain = saved.find(g=>g.id==='main');
+  const allDefault = defaults[0];
+  const mainGrp = savedMain || defaults[1];
+  const custom = saved.filter(g=>g.id!=='all'&&g.id!=='main'&&!g.builtin);
+  return [allDefault, mainGrp, ...custom];
 }
 
 let activeLbGroup = 'all';
+let _editingGrpId = null; // null = new group, string = editing existing
+
+// ── Tab visibility: only show tab to logged-in user if they are in that group
+function visibleGroupsForCurrentUser() {
+  const all = getAllLbGroups();
+  return all.filter(g => {
+    if(g.id === 'all') return true; // always visible
+    if(!g.visible || g.visible === 'all') return true;
+    if(!currentUser) return false;
+    return (g.visible || g.players || []).includes(currentUser);
+  });
+}
 
 function renderLbTabs() {
-  const groups = getAllLbGroups();
+  const groups = visibleGroupsForCurrentUser();
   const tabs = document.getElementById('lb-tabs');
   if(!tabs) return;
   tabs.innerHTML = '';
+
+  // Auto-switch if active tab is not visible
+  if(!groups.find(g=>g.id===activeLbGroup)) activeLbGroup = 'all';
+
   groups.forEach(g => {
-    const btn = document.createElement('button');
-    btn.className = 'lb-tab' + (g.id===activeLbGroup?' act':'');
-    btn.innerHTML = g.name + (!g.builtin?`<span class="del-tab" onclick="event.stopPropagation();deleteLbGroup('${g.id}')">×</span>`:'');
-    btn.onclick = () => { activeLbGroup=g.id; renderLbTabs(); renderLeaderboard(); };
+    const isActive = g.id === activeLbGroup;
+    const btn = document.createElement('div');
+    btn.style.cssText = 'display:flex;align-items:center;gap:0;position:relative';
+
+    const tab = document.createElement('button');
+    tab.className = 'lb-tab' + (isActive?' act':'');
+    tab.textContent = g.name;
+    tab.onclick = () => { activeLbGroup=g.id; renderLbTabs(); renderLeaderboard(); };
+
+    btn.appendChild(tab);
+
+    // Edit pencil on all tabs except "All Players"
+    if(g.id !== 'all') {
+      const editBtn = document.createElement('button');
+      editBtn.title = 'Edit group';
+      editBtn.style.cssText = `background:${isActive?'rgba(0,0,0,.2)':'var(--card2)'};border:none;
+        color:${isActive?'#000':'var(--grey)'};cursor:pointer;font-size:11px;
+        padding:0 7px;height:100%;border-radius:0 8px 8px 0;border-left:1px solid rgba(255,255,255,.1);
+        transition:.15s;margin-left:-1px`;
+      editBtn.textContent = '✏️';
+      editBtn.onclick = (e) => { e.stopPropagation(); openGrpModal(g.id); };
+      btn.appendChild(editBtn);
+    }
+
     tabs.appendChild(btn);
   });
-  const addBtn = document.createElement('button');
-  addBtn.className = 'lb-tab-add'; addBtn.title='Create new group'; addBtn.textContent='+';
-  addBtn.onclick = () => openGrpModal();
-  tabs.appendChild(addBtn);
+
+  // + Add button (only for logged-in users)
+  if(currentUser) {
+    const addBtn = document.createElement('button');
+    addBtn.className = 'lb-tab-add'; addBtn.title='Create new group'; addBtn.textContent='+';
+    addBtn.onclick = () => openGrpModal(null);
+    tabs.appendChild(addBtn);
+  }
 }
 
 function renderLeaderboard() {
@@ -1921,23 +1966,58 @@ function renderLeaderboard() {
 }
 
 function deleteLbGroup(id) {
-  const saved = (loadLbGroups()||[]).filter(g=>!g.builtin&&g.id!==id);
-  saveLbGroups(saved);
+  const existing = (loadLbGroups()||[]);
+  const updated = existing.filter(g=>g.id!==id);
+  saveLbGroups(updated);
   if(activeLbGroup===id) activeLbGroup='all';
   renderLbTabs(); renderLeaderboard();
   showToast('Group deleted');
 }
 
+// ── GROUP MODAL (create + edit) ──────────────────────────────────────
 let _grpSel = new Set();
-function openGrpModal() {
-  _grpSel = new Set(USERS);
-  document.getElementById('grp-modal-name').value='';
-  document.getElementById('grp-modal-name').style.borderColor='';
+
+function openGrpModal(editId) {
+  _editingGrpId = editId || null;
+  const groups = getAllLbGroups();
+  const existing = _editingGrpId ? groups.find(g=>g.id===_editingGrpId) : null;
+
+  // Pre-fill
+  const nameField = document.getElementById('grp-modal-name');
+  nameField.value = existing ? existing.name : '';
+  nameField.style.borderColor = '';
+
+  // Pre-select players
+  _grpSel = existing?.players ? new Set(existing.players) : new Set(USERS);
+
+  // Update modal title and buttons
+  document.getElementById('grp-modal-title').textContent = existing ? `Edit "${existing.name}"` : 'Create Group';
+  const okBtn = document.querySelector('.grp-modal-ok');
+  if(okBtn) okBtn.textContent = existing ? 'Save Changes' : 'Create Group';
+
+  // Show/hide delete button
+  let delBtn = document.getElementById('grp-modal-delete');
+  if(existing && existing.id !== 'main') {
+    if(!delBtn) {
+      delBtn = document.createElement('button');
+      delBtn.id = 'grp-modal-delete';
+      delBtn.style.cssText = 'padding:10px 14px;background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.3);border-radius:8px;font:600 13px Inter,sans-serif;cursor:pointer';
+      delBtn.textContent = '🗑 Delete';
+      delBtn.onclick = () => { closeGrpModal(); deleteLbGroup(_editingGrpId); };
+      document.querySelector('.grp-modal-btns').prepend(delBtn);
+    }
+    delBtn.style.display = '';
+  } else if(delBtn) {
+    delBtn.style.display = 'none';
+  }
+
   buildGrpPlayerList();
   document.getElementById('grp-modal-overlay').classList.add('show');
-  setTimeout(()=>document.getElementById('grp-modal-name').focus(),100);
+  setTimeout(()=>nameField.focus(),100);
 }
+
 function closeGrpModal() { document.getElementById('grp-modal-overlay').classList.remove('show'); }
+
 function buildGrpPlayerList() {
   const list = document.getElementById('grp-player-list');
   list.innerHTML='';
@@ -1953,18 +2033,39 @@ function buildGrpPlayerList() {
     list.appendChild(item);
   });
 }
+
 function saveGrpModal() {
-  const name=document.getElementById('grp-modal-name').value.trim();
-  if(!name){document.getElementById('grp-modal-name').style.borderColor='var(--red)';return;}
-  if(_grpSel.size<1){showToast('Select at least 1 player');return;}
-  const newGrp={id:'custom_'+Date.now(),name,players:[..._grpSel],builtin:false};
-  const existing=(loadLbGroups()||[]).filter(g=>!g.builtin);
-  existing.push(newGrp);
-  saveLbGroups(existing);
+  const name = document.getElementById('grp-modal-name').value.trim();
+  if(!name){ document.getElementById('grp-modal-name').style.borderColor='var(--red)'; return; }
+  if(_grpSel.size<1){ showToast('Select at least 1 player'); return; }
+
+  const players = [..._grpSel];
+  // visible = only selected players can see this tab
+  const visible = players;
+
+  const existing = (loadLbGroups()||[]);
+
+  if(_editingGrpId) {
+    // Edit existing
+    const idx = existing.findIndex(g=>g.id===_editingGrpId);
+    const grp = {id:_editingGrpId, name, players, visible, builtin:false};
+    if(idx>=0) existing[idx] = grp;
+    else existing.push(grp);
+    saveLbGroups(existing);
+    activeLbGroup = _editingGrpId;
+    showToast(`✅ "${name}" updated!`);
+  } else {
+    // Create new
+    const newGrp = {id:'custom_'+Date.now(), name, players, visible, builtin:false};
+    existing.push(newGrp);
+    saveLbGroups(existing);
+    activeLbGroup = newGrp.id;
+    showToast(`✅ "${name}" group created!`);
+  }
+
   closeGrpModal();
-  activeLbGroup=newGrp.id;
-  renderLbTabs(); renderLeaderboard();
-  showToast(`✅ "${name}" group created!`);
+  renderLbTabs();
+  renderLeaderboard();
 }
 
 function renderDashboard() {
