@@ -56,11 +56,19 @@ nav{position:sticky;top:0;z-index:200;background:rgba(7,26,15,.96);backdrop-filt
 .modal{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 32px;width:400px;max-width:92vw}
 .modal h2{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);margin-bottom:6px}
 .modal p{color:var(--grey);font-size:13px;margin-bottom:20px}
-.modal-users{display:flex;flex-direction:column;gap:8px}
-.user-opt{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;
-  cursor:pointer;transition:.15s;display:flex;align-items:center;gap:12px}
-.user-opt:hover,.user-opt.sel{border-color:var(--gold);background:#1a3a26}
 .uavatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+/* Login form */
+.login-form{display:flex;flex-direction:column;gap:12px}
+.login-input{width:100%;background:var(--card2);border:1px solid var(--border);color:var(--white);
+  padding:12px 16px;border-radius:8px;font:500 15px 'Inter',sans-serif;outline:none;
+  letter-spacing:.5px;transition:border-color .15s}
+.login-input:focus{border-color:var(--gold)}
+.login-btn{width:100%;padding:13px;background:var(--gold);color:#000;border:none;border-radius:8px;
+  font:700 15px 'Inter',sans-serif;cursor:pointer;transition:.15s;margin-top:4px}
+.login-btn:hover{background:var(--gold2)}
+.login-err{color:var(--red);font-size:12px;text-align:center;min-height:18px;font-weight:500}
+.login-pin-row{display:flex;gap:10px}
+.login-pin-row .login-input{letter-spacing:8px;text-align:center;font-size:20px;font-family:'Roboto Mono',monospace}
 
 /* PIN MODAL */
 #pin-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:600;align-items:center;justify-content:center}
@@ -398,19 +406,30 @@ table.tt tr:last-child td{border-bottom:none}
 <!-- USER MODAL -->
 <div class="overlay show" id="user-overlay">
   <div class="modal">
-    <h2>👋 Welcome!</h2>
-    <p>Select your name. You'll need your 4-digit PIN to enter predictions.</p>
-    <div class="modal-users" id="modal-users-list">
-      <!-- Built dynamically by rebuildUserModalList() -->
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:32px;margin-bottom:6px">⚽</div>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);letter-spacing:2px;margin:0">WC 2026 Predictions</h2>
+      <p style="color:var(--grey);font-size:12px;margin-top:6px">Enter your username and PIN to continue</p>
     </div>
-    <div style="margin-top:14px;font-size:11px;color:var(--grey);text-align:center">
-      No PIN set yet? First login will ask you to create one.
+    <div class="login-form">
+      <div>
+        <div style="font-size:11px;color:var(--grey);margin-bottom:5px;letter-spacing:1px;text-transform:uppercase">Username</div>
+        <input class="login-input" id="login-username" type="text" placeholder="Your name" maxlength="30" autocomplete="off"
+          oninput="document.getElementById('login-err').textContent=''"
+          onkeydown="if(event.key==='Enter')document.getElementById('login-pin').focus()">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--grey);margin-bottom:5px;letter-spacing:1px;text-transform:uppercase">PIN</div>
+        <input class="login-input login-pin-row" id="login-pin" type="password" placeholder="••••" maxlength="4"
+          inputmode="numeric" pattern="[0-9]*" autocomplete="off"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'');document.getElementById('login-err').textContent=''"
+          onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="login-err" id="login-err"></div>
+      <button class="login-btn" onclick="doLogin()">Login →</button>
     </div>
-    <div style="margin-top:10px">
-      <button class="add-user-btn" onclick="openAddUser()">
-        <span style="font-size:18px">＋</span>
-        <span>Add New Player</span>
-      </button>
+    <div style="margin-top:14px;text-align:center;font-size:11px;color:var(--grey)">
+      New player? Ask the admin to add your account.
     </div>
   </div>
 </div>
@@ -1526,8 +1545,64 @@ let _pinUser = null, _pinColor = null, _pinBuffer = '', _pinMode = 'enter'; // '
 let _pinConfirmBuffer = '';
 
 function openUserModal() {
-  rebuildUserModalList();
+  // Reset form
+  const u = document.getElementById('login-username');
+  const p = document.getElementById('login-pin');
+  const e = document.getElementById('login-err');
+  if(u) u.value = '';
+  if(p) p.value = '';
+  if(e) e.textContent = '';
   document.getElementById('user-overlay').classList.add('show');
+  setTimeout(()=>{ if(u) u.focus(); }, 100);
+}
+
+
+function doLogin() {
+  const username = (document.getElementById('login-username').value||'').trim();
+  const pin      = (document.getElementById('login-pin').value||'').trim();
+  const errEl    = document.getElementById('login-err');
+
+  if(!username) { errEl.textContent = 'Please enter your username'; return; }
+  if(!pin)      { errEl.textContent = 'Please enter your PIN'; return; }
+
+  // Find user (case-insensitive match)
+  const all = getAllUsers();
+  const match = all.find(u => u.name.toLowerCase() === username.toLowerCase());
+
+  if(!match) { errEl.textContent = 'Invalid username or PIN'; return; }
+
+  if(!hasPIN(match.name)) {
+    // First time — set up PIN via existing flow
+    document.getElementById('user-overlay').classList.remove('show');
+    _pinUser = match.name; _pinColor = match.color;
+    _pinBuffer = pin; // pre-fill with what they typed
+    _pinMode = 'setup';
+    document.getElementById('pm-title').textContent = 'Create Your PIN';
+    document.getElementById('pm-sub').textContent = `${match.name}, confirm your 4-digit PIN`;
+    _pinConfirmBuffer = pin;
+    _pinBuffer = '';
+    _pinMode = 'confirm';
+    document.getElementById('pin-overlay').classList.add('show');
+    updatePinDots();
+    return;
+  }
+
+  if(isAuthenticated(match.name)) {
+    // Already authenticated this session
+    document.getElementById('user-overlay').classList.remove('show');
+    finishLogin(match.name, match.color);
+    return;
+  }
+
+  if(checkPIN(match.name, pin)) {
+    authenticate(match.name);
+    document.getElementById('user-overlay').classList.remove('show');
+    finishLogin(match.name, match.color);
+  } else {
+    errEl.textContent = 'Invalid username or PIN';
+    document.getElementById('login-pin').value = '';
+    document.getElementById('login-pin').focus();
+  }
 }
 
 function rebuildUserModalList() {
@@ -3028,16 +3103,20 @@ function setCmpFilt(f,btn){
 }
 
 function renderCompare(){
-  const allPreds={}; USERS.forEach(u=>{allPreds[u]=lp(u)});
+  // Use active leaderboard group's players, or all if "All Players"
+  const allGroups = getAllLbGroups();
+  const activeGrp = allGroups.find(g=>g.id===activeLbGroup)||allGroups[0];
+  const cmpUsers = activeGrp.players ? activeGrp.players.filter(p=>USERS.includes(p)) : [...USERS];
+
+  const allPreds={}; cmpUsers.forEach(u=>{allPreds[u]=lp(u)});
   const actuals=la();
   let matches = cmpFilt==='all' ? ALL : ALL.filter(m=>m[1]===cmpFilt);
   const byDate={};
   matches.forEach(m=>{(byDate[m[3]]=byDate[m[3]]||[]).push(m)});
   const c=document.getElementById('cmp-content');
   c.innerHTML='';
-  c.style.setProperty('--user-count', USERS.length);
 
-  const n = USERS.length;
+  const n = cmpUsers.length;
 
   // Inject dynamic grid CSS
   const sid='cmp-grid-style';
@@ -3056,7 +3135,7 @@ function renderCompare(){
     tbl.className='cmp-section';
     tbl.innerHTML=`<div class="cmp-hd-row">
       <div class="cmp-hd-cell">Match</div>
-      ${USERS.map(u=>`<div class="cmp-hd-cell" style="color:${COLORS[u]||'var(--grey)'};text-align:center;font-size:11px">${u}</div>`).join('')}
+      ${cmpUsers.map(u=>`<div class="cmp-hd-cell" style="color:${COLORS[u]||'var(--grey)'};text-align:center;font-size:11px">${u}</div>`).join('')}
       <div class="cmp-hd-cell" style="text-align:center">Actual</div>
     </div>`;
 
@@ -3073,7 +3152,7 @@ function renderCompare(){
       row.className='cmp-data-row';
       let html=`<div class="cmp-cell match" style="font-size:11px">${home} v ${away}</div>`;
 
-      USERS.forEach(u=>{
+      cmpUsers.forEach(u=>{
         const p=allPreds[u][mid];
         if(!visible){
           // Before deadline: show own predictions, hide others
