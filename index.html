@@ -3036,73 +3036,80 @@ try {
   rebuildUserModalList();
 }
 </script>
-<!-- ══ BACKGROUND MUSIC ════════════════════════════════════════════ -->
+
+  <!-- ══ BACKGROUND MUSIC ════════════════════════════════════════════ -->
 <div id="yt-player-div" style="position:fixed;top:-400px;left:-400px;width:300px;height:200px;pointer-events:none"></div>
 <script>
 var _ytPlayer = null;
 var _ytIdx = 0;
-var _ytClipTimer = null;
+var _ytTimer = null;
 var _ytStarted = false;
 var _ytReady = false;
+var YT_SECS = 60;
 
 var YT_PLAYLIST = [
-  "HaaqDQSmxNI",  // Shakira & Burna Boy - Dai Dai (Official WC 2026 Song)
-  "ZF-hKFBWcJk",  // K'naan - Waving Flag
+  "HaaqDQSmxNI",
+  "ZF-hKFBWcJk",
 ];
-var YT_CLIP_SECS = 300;
 
 window.onYouTubeIframeAPIReady = function() {
   _ytReady = true;
   _ytPlayer = new YT.Player('yt-player-div', {
-    height: '200', width: '300',
+    height:'200', width:'300',
     videoId: YT_PLAYLIST[0],
-    playerVars: { autoplay:0, controls:0, disablekb:1, fs:0, iv_load_policy:3, modestbranding:1, rel:0, playsinline:1 },
-    events: {
-      onReady: function(e) {
+    playerVars:{autoplay:0,controls:0,disablekb:1,fs:0,iv_load_policy:3,modestbranding:1,rel:0,playsinline:1},
+    events:{
+      onReady: function(e){
         e.target.setVolume(30);
-        if(_ytStarted) { e.target.loadVideoById(YT_PLAYLIST[0]); e.target.playVideo(); }
+        if(_ytStarted){ _ytPlayCurrent(); }
       },
-      onStateChange: function(e) {
-        if(e.data === YT.PlayerState.PLAYING) {
-          clearTimeout(_ytClipTimer);
-          _ytClipTimer = setTimeout(_ytNext, YT_CLIP_SECS * 1000);
-        }
-        if(e.data === YT.PlayerState.ENDED) _ytNext();
+      onStateChange: function(e){
+        // If track ended before 60s, move to next
+        if(e.data === YT.PlayerState.ENDED){ _ytNext(); }
       },
-      onError: function() { _ytNext(); }
+      onError: function(){ _ytNext(); }
     }
   });
 };
 
-function _ytNext() {
-  clearTimeout(_ytClipTimer);
-  _ytIdx = (_ytIdx + 1) % YT_PLAYLIST.length;
-  if(_ytPlayer && _ytPlayer.loadVideoById) _ytPlayer.loadVideoById(YT_PLAYLIST[_ytIdx]);
+function _ytPlayCurrent(){
+  if(!_ytPlayer || !_ytPlayer.loadVideoById) return;
+  clearTimeout(_ytTimer);
+  _ytPlayer.loadVideoById(YT_PLAYLIST[_ytIdx]);
+  // After a short delay to let it load, explicitly call play
+  setTimeout(function(){
+    if(_ytPlayer && _ytPlayer.playVideo) _ytPlayer.playVideo();
+  }, 800);
+  // Schedule next track after YT_SECS seconds
+  _ytTimer = setTimeout(function(){ _ytNext(); }, YT_SECS * 1000);
 }
 
-function _ytStart() {
+function _ytNext(){
+  clearTimeout(_ytTimer);
+  _ytIdx = (_ytIdx + 1) % YT_PLAYLIST.length;
+  _ytPlayCurrent();
+}
+
+function _ytStart(){
   if(_ytStarted) return;
   _ytStarted = true;
-  if(_ytPlayer && _ytPlayer.playVideo) {
-    _ytPlayer.loadVideoById(YT_PLAYLIST[0]);
-    _ytPlayer.playVideo();
-  }
-  ['click','touchstart','touchend','keydown'].forEach(function(ev) {
+  if(_ytReady && _ytPlayer){ _ytPlayCurrent(); }
+  ['click','touchstart','touchend','keydown'].forEach(function(ev){
     document.removeEventListener(ev, _ytStart);
   });
 }
 
-['click','touchstart','touchend','keydown'].forEach(function(ev) {
-  document.addEventListener(ev, _ytStart, { passive: true });
+['click','touchstart','touchend','keydown'].forEach(function(ev){
+  document.addEventListener(ev, _ytStart, {passive:true});
 });
 
-(function() {
+(function(){
   var tag = document.createElement('script');
   tag.src = 'https://www.youtube.com/iframe_api';
-  var first = document.getElementsByTagName('script')[0];
-  first.parentNode.insertBefore(tag, first);
+  document.head.appendChild(tag);
 })();
 </script>
+
 
 
 
