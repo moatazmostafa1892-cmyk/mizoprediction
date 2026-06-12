@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>⚽ WC 2026 Predictions</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
-<style>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=MYsnvYoSXzxo7Mbgp9jZSU_159M15pZJggUZnS7k02uD6w-uowBgBcgbUZj6Qxyu2HkXUsLv93K-tSV_VOmY7HxlCNtkin2ASj_tAthk9dk-tTrV6br9hetPImgH0bkXFQK9YHAI_l06pZQE8Sm-9wf1Cp6ylsgRtHQ_JY_YvTwJYUWmw1vFEGmgLKHeUqQevbINQl74Md-I0ev4g22junUd3sgYiW0MpAX4XQUMu4PdBlzpXEARYm0H8-F-Oia2Zj-hZC-x8FIC2K8b2Fl7Spink0X8txP26PEkz1cvekarf4w9yC6pcfhL7kJL41Oh1IqtQxVT3DhZJknQ4pzAHTTphZfvW0dtHkIGOK-9qd0" charset="UTF-8"></script><style>
 :root{
   --pitch:#071a0f;--card:#0b2015;--card2:#0f2a1c;--border:#1a3a26;
   --gold:#f5c518;--gold2:#b8941a;--white:#eef4ee;--grey:#6b8a76;
@@ -413,6 +413,90 @@ table.tt tr:last-child td{border-bottom:none}
 .grp-modal-ok:hover{background:var(--gold2)}
 .grp-modal-cancel{padding:10px 16px;background:var(--card2);color:var(--grey);
   border:1px solid var(--border);border-radius:8px;font:500 14px 'Inter',sans-serif;cursor:pointer}
+
+
+
+/* ── MOBILE LEADERBOARD FIX ───────────────────────────────────────
+   Turns the leaderboard into readable cards on phones instead of
+   squeezing 7 columns into a narrow screen. */
+@media(max-width:640px){
+  nav{padding:6px 8px;height:auto;min-height:48px;gap:4px}
+  .logo{font-size:18px;letter-spacing:2px;margin-right:6px}
+  .nav-btn{font-size:11px;padding:7px 9px}
+  .nav-right{margin-left:0}
+  #user-pill{font-size:11px;padding:5px 9px}
+
+  .hero{padding:24px 12px 18px}
+  .hero-title{font-size:clamp(36px,12vw,54px)}
+  .hero-stats{gap:12px;margin-top:16px}
+  .hstat-val{font-size:27px}
+  .hstat-lbl{font-size:8px;letter-spacing:1px}
+
+  .sec{padding:14px 10px 48px}
+  .dash-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .dcard{padding:8px 10px}
+  .dcard-val{font-size:24px}
+  .dcard-sub{font-size:10px;line-height:1.25}
+
+  .lb-wrap{border-radius:12px;overflow:hidden}
+  .lb-head{padding:10px 12px;display:block}
+  .lb-head h3{font-size:18px;margin-bottom:3px}
+  .lb-head span{display:block;font-size:10px!important;line-height:1.3}
+  .lb-row.hd{display:none}
+  .lb-row{
+    display:grid;
+    grid-template-columns:34px 1fr auto;
+    grid-template-areas:
+      "rank name pts"
+      "rank meta meta";
+    gap:3px 8px;
+    align-items:center;
+    padding:12px 12px;
+    border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  .lb-row .lb-rank{
+    grid-area:rank;
+    font-size:22px;
+    align-self:center;
+  }
+  .lb-row > div:nth-child(2){
+    grid-area:name;
+    font-size:14px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .lb-row > div:nth-child(3),
+  .lb-row > div:nth-child(4),
+  .lb-row > div:nth-child(5),
+  .lb-row > div:nth-child(7){display:none}
+  .lb-row > div:nth-child(6){
+    grid-area:pts;
+    font-size:22px;
+    text-align:right;
+    min-width:38px;
+  }
+  .lb-row::after{
+    content: attr(data-mobile-meta);
+    grid-area:meta;
+    color:var(--grey);
+    font-family:'Roboto Mono',monospace;
+    font-size:10px;
+    line-height:1.35;
+  }
+
+  .stage-tabs,.toolbar,.lb-tabs{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
+  .stab,.fbtn,.lb-tab{flex-shrink:0}
+
+  .mcard{grid-template-columns:1fr 86px 1fr;margin-bottom:7px}
+  .tside{padding:8px 7px;min-width:0}
+  .tname{font-size:12px;white-space:normal;line-height:1.15}
+  .sc-center{padding:6px 5px}
+  .sc-in{width:30px;height:30px;font-size:14px}
+
+  .cmp-hd-row,.cmp-data-row{grid-template-columns:118px repeat(var(--user-count,3),minmax(96px,1fr)) 86px!important}
+  .cmp-hd-cell,.cmp-cell{padding:7px 6px;font-size:11px}
+}
 
 </style>
 </head>
@@ -844,7 +928,7 @@ function seedKnownResults() {
 }
 
 const STAGES = [
-  {key:'MD1',  label:'Matchday 1',    deadline:'2026-06-12T20:00:00Z', mids:GM.filter(m=>m[1]==='MD1').map(m=>m[0])},
+  {key:'MD1',  label:'Matchday 1',    deadline:'2026-06-20T23:59:59Z', mids:GM.filter(m=>m[1]==='MD1').map(m=>m[0])},
   {key:'MD2',  label:'Matchday 2',    deadline:'2026-06-18T17:00:00Z', mids:GM.filter(m=>m[1]==='MD2').map(m=>m[0])},
   {key:'MD3',  label:'Matchday 3',    deadline:'2026-06-24T17:00:00Z', mids:GM.filter(m=>m[1]==='MD3').map(m=>m[0])},
   {key:'R32',  label:'Round of 32',   deadline:'2026-06-28T20:00:00Z', mids:KO.filter(m=>m[1]==='R32').map(m=>m[0])},
@@ -2266,7 +2350,7 @@ function renderLeaderboard() {
   const lb = document.getElementById('lb-rows');
   lb.innerHTML = '';
   players.map(u=>({u,...score(u)})).sort((a,b)=>b.pts-a.pts||b.correct-a.correct).forEach((s,i) => {
-    lb.innerHTML += `<div class="lb-row">
+    lb.innerHTML += `<div class="lb-row" data-mobile-meta="${s.n}/104 predictions · ${s.correct} correct · ${s.exact} exact · ${s.pct}%">
       <div class="lb-rank ${['r1','r2','r3'][i]||''}">${i+1}</div>
       <div style="font-weight:600;color:${COLORS[s.u]||'var(--grey)'}">${s.u}</div>
       <div class="lb-n">${s.n}</div><div class="lb-n">${s.correct}</div>
