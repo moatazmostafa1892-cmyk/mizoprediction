@@ -899,6 +899,35 @@ const FB_READY = FB_URL && FB_URL !== 'PASTE_YOUR_FIREBASE_URL_HERE' && FB_URL.i
 if(!FB_READY) {
 }
 
+// Firebase REST helpers. These are intentionally small and safe:
+// - fbGet(path) reads without changing data.
+// - fbSet(path, value) writes only the exact path passed to it.
+// - value === null deletes only that exact node.
+function fbPath(path) {
+  const clean = String(path || '').replace(/^\/+|\/+$/g, '');
+  return clean ? `${FB_URL}/${clean}.json` : `${FB_URL}/.json`;
+}
+async function fbGet(path) {
+  if(!FB_READY) return null;
+  const r = await fetch(fbPath(path), {cache:'no-cache'});
+  if(!r.ok) throw new Error(`Firebase GET failed: ${r.status}`);
+  return await r.json();
+}
+async function fbSet(path, value) {
+  if(!FB_READY) return null;
+  const r = await fetch(fbPath(path), {
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(value)
+  });
+  if(!r.ok) throw new Error(`Firebase PUT failed: ${r.status}`);
+  return await r.json();
+}
+function fbKey(s) {
+  // Firebase RTDB keys cannot contain . # $ [ ] or /
+  return String(s).trim().replace(/[.#$\[\]\/]/g, '_');
+}
+
 // In-memory cache so UI is fast
 const _cache = {};
 
@@ -913,7 +942,7 @@ function getPINHash(user) {
 function setPINHash(user, pin) {
   const hash = hashPIN(pin);
   _cache[`pin_${user}`] = hash;
-  fbSet(`pins/${user}`, hash);
+  fbSet(`pins/${fbKey(user)}`, hash);
 }
 async function loadPinStatusFromDB() {
   const pins = await fbGet('pins');
@@ -931,13 +960,13 @@ function lp(u) {
   return _cache[`pred_${u}`] || {};
 }
 async function loadPredictions(u) {
-  const data = await fbGet(`predictions/${u}`);
+  const data = await fbGet(`predictions/${fbKey(u)}`);
   _cache[`pred_${u}`] = data || {};
   return _cache[`pred_${u}`];
 }
 function sp(u, data) {
   _cache[`pred_${u}`] = data;
-  fbSet(`predictions/${u}`, data);
+  fbSet(`predictions/${fbKey(u)}`, data);
 }
 
 // ── Actuals ───────────────────────────────────────────────────────────
@@ -997,7 +1026,7 @@ function loadPredBracket(user) {
 }
 function savePredBracket(user, data) {
   _cache[`pred_br_${user}`] = data;
-  fbSet(`pred_brackets/${user}`, data);
+  fbSet(`pred_brackets/${fbKey(user)}`, data);
 }
 
 // ── Celebration shown flags ───────────────────────────────────────────
@@ -1009,7 +1038,7 @@ function markCelShown(key) {
     shown.push(key);
     _cache['cel_shown'] = shown;
     // Store per-user if logged in
-    if(currentUser) fbSet(`cel_shown/${currentUser}`, shown);
+    if(currentUser) fbSet(`cel_shown/${fbKey(currentUser)}`, shown);
   }
 }
 function wasCelShown(key) { return getCelShown().includes(key); }
@@ -1674,6 +1703,9 @@ async function doSignup() {
   if(!username || username.length < 2) {
     setAuthErr('signup', 'Username must be at least 2 characters'); return;
   }
+  if(!/^[A-Za-z0-9 _-]+$/.test(username)) {
+    setAuthErr('signup', 'Use only letters, numbers, spaces, _ or -'); return;
+  }
   if(pin.length !== 4) {
     setAuthErr('signup', 'PIN must be exactly 4 digits'); return;
   }
@@ -1702,20 +1734,23 @@ async function doSignup() {
   if(btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
 
   try {
-    // Add to custom users in Firebase
+    // Always re-check Firebase before creating. This prevents two people
+    // creating the same name and prevents stale browser cache overwriting users.
+    const latestCustom = parseFirebaseList(await fbGet('custom_users'));
+    if(latestCustom.find(u => u.name && u.name.toLowerCase() === username.toLowerCase())) {
+      setAuthErr('signup', 'Username already exists. Choose a different name.');
+      if(btn) { btn.disabled = false; btn.textContent = 'Create Account →'; }
+      return;
+    }
+
     const customUsers = getLocalCustomUsers();
     const newUser = {name: username, color};
-    customUsers.push(newUser);
+    if(!customUsers.find(u => u.name.toLowerCase() === username.toLowerCase())) customUsers.push(newUser);
     setLocalCustomUsers(customUsers);
 
-    // Write to Firebase as name-keyed object
-    const existingFB = await fbGet('custom_users');
-    const fbObj = {};
-    if(existingFB && typeof existingFB === 'object') {
-      Object.values(existingFB).filter(Boolean).forEach(u => { if(u.name) fbObj[u.name] = u; });
-    }
-    fbObj[username] = newUser;
-    await fbSet('custom_users', fbObj);
+    // Write ONLY this user. Do not PUT the whole custom_users object,
+    // because that can wipe other players if this browser has stale data.
+    await fbSet(`custom_users/${fbKey(username)}`, newUser);
 
     // Set PIN
     setPINHash(username, pin);
@@ -1796,14 +1831,12 @@ async function deleteUser(name) {
   const custom = getLocalCustomUsers().filter(u => u.name !== name);
   setLocalCustomUsers(custom);
 
-  // Remove from Firebase
-  const customObj = {};
-  custom.forEach(u => { customObj[u.name] = u; });
-  await fbSet('custom_users', Object.keys(customObj).length ? customObj : null);
+  // Remove only this user from Firebase. Never rewrite the whole custom_users node.
+  await fbSet(`custom_users/${fbKey(name)}`, null);
 
   // Remove their predictions and PIN from Firebase
-  await fbSet(`predictions/${name}`, null);
-  await fbSet(`pins/${name}`, null);
+  await fbSet(`predictions/${fbKey(name)}`, null);
+  await fbSet(`pins/${fbKey(name)}`, null);
 
   // Remove from cache
   delete _cache[`pred_${name}`];
@@ -1984,6 +2017,7 @@ async function submitAddUser() {
   const errEl = document.getElementById('au-err');
   if(!name) { errEl.textContent = 'Please enter a name'; return; }
   if(name.length < 2) { errEl.textContent = 'Name must be at least 2 characters'; return; }
+  if(!/^[A-Za-z0-9 _-]+$/.test(name)) { errEl.textContent = 'Use only letters, numbers, spaces, _ or -'; return; }
   const all = getAllUsers();
   if(all.find(u => u.name.toLowerCase() === name.toLowerCase())) {
     errEl.textContent = `"${name}" already exists`; return;
@@ -1992,14 +2026,19 @@ async function submitAddUser() {
   const btn = document.querySelector('.au-submit');
   if(btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
+  const latestCustom = parseFirebaseList(await fbGet('custom_users'));
+  if(latestCustom.find(u => u.name && u.name.toLowerCase() === name.toLowerCase())) {
+    errEl.textContent = `"${name}" already exists`;
+    if(btn) { btn.disabled = false; btn.textContent = 'Create Player'; }
+    return;
+  }
+
   const custom = getLocalCustomUsers();
-  custom.push({name, color: selectedColor});
+  if(!custom.find(u => u.name.toLowerCase() === name.toLowerCase())) custom.push({name, color: selectedColor});
   setLocalCustomUsers(custom);
 
-  // Write to Firebase as object (keyed by name) to avoid Firebase array mangling
-  const customObj = {};
-  custom.forEach((u, i) => { customObj[u.name || i] = u; });
-  await fbSet('custom_users', customObj);
+  // Write ONLY this user. Never overwrite the whole custom_users node.
+  await fbSet(`custom_users/${fbKey(name)}`, {name, color: selectedColor});
 
   // Now update local state
   syncUserGlobals();
@@ -2538,7 +2577,7 @@ function savePredBracket(user, data) {
   const k = PRED_BR_KEY(user);
   _cache[k] = data;
 
-  fbSet(`pred_brackets/${user}`, data);
+  fbSet(`pred_brackets/${fbKey(user)}`, data);
 }
 
 // Full bracket progression map — which R32 match feeds which R16 slot and position
@@ -3368,7 +3407,7 @@ function getCelShown() {
 }
 function markCelShown(stageKey) {
   const shown = getCelShown();
-  const shown2 = getCelShown(); if(!shown2.includes(stageKey)){shown2.push(stageKey);_cache['cel_shown']=shown2;if(currentUser)fbSet(`cel_shown/${currentUser}`,shown2);}
+  const shown2 = getCelShown(); if(!shown2.includes(stageKey)){shown2.push(stageKey);_cache['cel_shown']=shown2;if(currentUser)fbSet(`cel_shown/${fbKey(currentUser)}`,shown2);}
 }
 function wasCelShown(stageKey) { return getCelShown().includes(stageKey); }
 
