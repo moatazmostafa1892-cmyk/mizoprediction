@@ -772,7 +772,7 @@ table.tt tr:last-child td{border-bottom:none}
 <!-- COMPARE -->
 <div id="compare" class="sec">
   <div class="sec-title">Compare & Results</div>
-  <div class="sec-sub">Results auto-populate once · finished results lock and stop background updates</div>
+  <div class="sec-sub">Live results sync by match ID or teams/date · final scores lock permanently</div>
   <div class="toolbar">
     <button class="fbtn act" onclick="setCmpFilt('all',this)">All</button>
     <button class="fbtn" onclick="setCmpFilt('MD1',this)">GW1</button>
@@ -789,54 +789,6 @@ table.tt tr:last-child td{border-bottom:none}
 
 <script>
 
-// ── FINAL ACTUAL RESULT LOCK ──────────────────────────────────────
-// A final actual result is written once, then locked.
-// Locked results are skipped by all future background/live result checks.
-function hasActualScore(mid){
-  const a = ACTUAL && ACTUAL[mid];
-  return !!(a && a.hg !== '' && a.ag !== '' && a.hg != null && a.ag != null);
-}
-function isActualFinalLocked(mid){
-  const a = ACTUAL && ACTUAL[mid];
-  return !!(hasActualScore(mid) && (a.locked === true || a.final === true || a.status === 'FT' || a.source === 'auto-final'));
-}
-function lockActualFinal(mid){
-  if(!ACTUAL || !ACTUAL[mid] || !hasActualScore(mid)) return;
-  ACTUAL[mid].locked = true;
-  ACTUAL[mid].final = true;
-  ACTUAL[mid].status = ACTUAL[mid].status || 'FT';
-  ACTUAL[mid].source = 'auto-final';
-  ACTUAL[mid].lockedAt = ACTUAL[mid].lockedAt || new Date().toISOString();
-  try{
-    const cache = JSON.parse(localStorage.getItem('wc2026_final_actuals') || '{}');
-    cache[mid] = ACTUAL[mid];
-    localStorage.setItem('wc2026_final_actuals', JSON.stringify(cache));
-  }catch(e){}
-}
-function loadFinalActualCache(){
-  try{
-    const cache = JSON.parse(localStorage.getItem('wc2026_final_actuals') || '{}');
-    Object.keys(cache).forEach(mid=>{
-      if(cache[mid] && cache[mid].hg != null && cache[mid].ag != null){
-        ACTUAL[mid] = cache[mid];
-        lockActualFinal(mid);
-      }
-    });
-  }catch(e){}
-}
-function normalizeFinalActualLocks(){
-  if(!ACTUAL) return;
-  Object.keys(ACTUAL).forEach(mid=>{
-    if(isActualFinalLocked(mid) || hasActualScore(mid) && ACTUAL[mid].source === 'auto-final'){
-      lockActualFinal(mid);
-    }
-  });
-}
-function shouldSkipActualFetch(mid){
-  return isActualFinalLocked(mid);
-}
-
-loadFinalActualCache();
 // ═══════════════════════════════════════════════════════════════════
 // ── MATCH DATA ──────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
@@ -1116,6 +1068,108 @@ function sa(data) {
   _cache['actuals'] = data;
   fbSet('actuals', data);
 }
+
+// ── ROBUST ACTUAL RESULT SYNC ─────────────────────────────────────
+// Fixes missed matches such as M003 by matching API data by:
+// 1) explicit Mxxx ID / match number when available
+// 2) home team + away team + match date fallback
+// Final results are locked after first successful sync.
+function normTeamName(v){
+  return String(v || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/&/g,'and')
+    .replace(/[^a-z0-9]+/g,' ')
+    .trim();
+}
+function dateOnly(v){
+  if(!v) return '';
+  const d = new Date(v);
+  if(!isNaN(d)) return d.toISOString().slice(0,10);
+  return String(v).slice(0,10);
+}
+function findMatchIdFromApi(apiMatch){
+  const rawId = apiMatch.id || apiMatch.match_id || apiMatch.matchId || apiMatch.number || apiMatch.match_number || apiMatch.matchNumber;
+  if(rawId){
+    const s = String(rawId);
+    const direct = s.match(/^M\d{3}$/i);
+    if(direct) return direct[0].toUpperCase();
+    const n = parseInt(s.replace(/\D/g,''),10);
+    if(n && n >= 1 && n <= 104){
+      const mid = 'M' + String(n).padStart(3,'0');
+      if(ALL.some(m=>m[0]===mid)) return mid;
+    }
+  }
+
+  const home = normTeamName(
+    apiMatch.home || apiMatch.home_team || apiMatch.homeTeam ||
+    apiMatch.team1 || apiMatch.home_name || apiMatch.homeTeamName
+  );
+  const away = normTeamName(
+    apiMatch.away || apiMatch.away_team || apiMatch.awayTeam ||
+    apiMatch.team2 || apiMatch.away_name || apiMatch.awayTeamName
+  );
+  const apiDate = dateOnly(apiMatch.date || apiMatch.match_date || apiMatch.kickoff || apiMatch.utcDate || apiMatch.startTime);
+
+  if(home && away){
+    const found = ALL.find(m=>{
+      const sameTeams =
+        normTeamName(m[4]) === home &&
+        normTeamName(m[5]) === away;
+      const sameDate = !apiDate || m[3] === apiDate || dateOnly(m[8]) === apiDate;
+      return sameTeams && sameDate;
+    });
+    if(found) return found[0];
+
+    // fallback if the API has reversed home/away
+    const reversed = ALL.find(m=>{
+      const sameTeams =
+        normTeamName(m[4]) === away &&
+        normTeamName(m[5]) === home;
+      const sameDate = !apiDate || m[3] === apiDate || dateOnly(m[8]) === apiDate;
+      return sameTeams && sameDate;
+    });
+    if(reversed) return reversed[0];
+  }
+
+  return null;
+}
+function getApiScore(apiMatch){
+  const hg = apiMatch.hg ?? apiMatch.home_score ?? apiMatch.homeScore ?? apiMatch.score_home ?? apiMatch.goals_home ?? apiMatch.homeGoals;
+  const ag = apiMatch.ag ?? apiMatch.away_score ?? apiMatch.awayScore ?? apiMatch.score_away ?? apiMatch.goals_away ?? apiMatch.awayGoals;
+  if(hg === undefined || ag === undefined || hg === null || ag === null || hg === '' || ag === '') return null;
+  const h = Number(hg), a = Number(ag);
+  if(Number.isNaN(h) || Number.isNaN(a)) return null;
+  return {hg:h, ag:a};
+}
+function isApiFinal(apiMatch){
+  const st = String(apiMatch.status || apiMatch.state || apiMatch.match_status || apiMatch.status_short || '').toLowerCase();
+  return ['ft','finished','full time','full-time','completed','complete','ended','final'].some(x=>st.includes(x));
+}
+function hasActualScore(mid){
+  const a = la()[mid];
+  return !!(a && a.hg !== '' && a.ag !== '' && a.hg != null && a.ag != null);
+}
+function isActualFinalLocked(mid){
+  const a = la()[mid];
+  return !!(a && hasActualScore(mid) && (a.locked === true || a.final === true || a.status === 'FT' || a.source === 'auto-final' || a.source === 'confirmed-final'));
+}
+function finaliseActualObject(res){
+  return Object.assign({}, res, {
+    hg: Number(res.hg),
+    ag: Number(res.ag),
+    locked: true,
+    final: true,
+    status: 'FT',
+    source: res.source && String(res.source).includes('confirmed') ? 'confirmed-final' : 'auto-final',
+    lockedAt: res.lockedAt || new Date().toISOString(),
+    ts: res.ts || Date.now()
+  });
+}
+function shouldSkipActualFetch(mid){
+  return isActualFinalLocked(mid);
+}
+
 
 // ── Custom users ──────────────────────────────────────────────────────
 const CUSTOM_USERS_KEY = 'wc2026_custom_users'; // kept for migration only
@@ -1484,58 +1538,67 @@ async function fetchResultsFromSource(url, parser) {
   return parser(await r.text());
 }
 
+
+function normalizeApiResultsToActuals(payload, source='api'){
+  const out = {};
+  const list = Array.isArray(payload) ? payload :
+    Array.isArray(payload?.matches) ? payload.matches :
+    Array.isArray(payload?.data) ? payload.data :
+    Array.isArray(payload?.response) ? payload.response : [];
+
+  list.forEach(match=>{
+    if(!isApiFinal(match)) return;
+    const mid = findMatchIdFromApi(match);
+    if(!mid) return;
+    if(shouldSkipActualFetch(mid)) return;
+    const score = getApiScore(match);
+    if(!score) return;
+    out[mid] = finaliseActualObject({...score, source, ts:Date.now()});
+  });
+  return out;
+}
+
 async function fetchAllResults() {
-  // Try wc2026api first — most reliable for FT status
-  // Note: wc2026api requires API key in Authorization header
-  // We'll try without first, then worldcup26.ir
-  try {
-    const results = await fetchResultsFromSource(
-      'https://worldcup26.ir/get/games',
-      parseWorldcup26
-    );
-    if(Object.keys(results).length > 0) return results;
-  } catch(e) {}
+  const endpoints = [];
+  let merged = {};
 
-  // Try wc2026api without auth (may work for public endpoints)
-  try {
-    const results = await fetchResultsFromSource(
-      'https://api.wc2026api.com/matches',
-      parseWC2026Api
-    );
-    if(Object.keys(results).length > 0) return results;
-  } catch(e) {}
+  for(const url of endpoints) {
+    try {
+      const res = await fetch(url, {cache:'no-store'});
+      if(!res.ok) continue;
+      const data = await res.json();
 
-  // Last resort: openfootball (may lag hours/days but better than nothing)
-  try {
-    const results = await fetchResultsFromSource(
-      'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json',
-      parseResultsFromOpenFootball
-    );
-    if(Object.keys(results).length > 0) return results;
-  } catch(e) {}
+      const parsed = normalizeApiResultsToActuals(data, url);
+      merged = Object.assign(merged, parsed);
+    } catch(e) {
+      console.warn('Result source failed:', url, e);
+    }
+  }
 
-  return null;
+  return merged;
 }
 
 async function syncResultToFirebase(results) {
-  if(shouldSkipActualFetch(results)) return ACTUAL[results]; // skip final locked actual result
-
   if(!results || !Object.keys(results).length) return;
-  const existing = la();
+  const actuals = la();
   let changed = 0;
+
   Object.entries(results).forEach(([mid, res]) => {
-    const ex = existing[mid];
-    if(!ex || ex.hg !== res.hg || ex.ag !== res.ag) {
-      existing[mid] = res;
-      changed++;
-    }
+    if(!mid || !ALL.some(m=>m[0]===mid)) return;
+    if(isActualFinalLocked(mid)) return;
+
+    actuals[mid] = finaliseActualObject(res);
+    changed++;
   });
+
   if(changed > 0) {
-    sa(existing);
+    _cache['actuals'] = actuals;
+    await fbSet('actuals', actuals);
     renderDashboard();
     if(document.getElementById('compare')?.classList.contains('act')) renderCompare();
     if(document.getElementById('bracket-real')?.classList.contains('act')) renderRealGroups();
     updateHeroStats();
+    setTimeout(checkStageCompletions, 500);
   }
 }
 
@@ -3797,6 +3860,17 @@ try {
 
 
 normalizeFinalActualLocks();
+
+async function debugM003Sync(){
+  const match = ALL.find(m=>m[0]==='M003');
+  console.log('M003 local match:', match);
+  console.log('M003 current actual:', la()['M003']);
+  const r = await fetchAllResults();
+  console.log('Fetched normalized results:', r);
+  console.log('M003 fetched result:', r['M003']);
+  return r['M003'] || null;
+}
+
 </script>
 
 
@@ -3900,6 +3974,17 @@ normalizeFinalActualLocks();
     }
   };
 })();
+
+async function debugM003Sync(){
+  const match = ALL.find(m=>m[0]==='M003');
+  console.log('M003 local match:', match);
+  console.log('M003 current actual:', la()['M003']);
+  const r = await fetchAllResults();
+  console.log('Fetched normalized results:', r);
+  console.log('M003 fetched result:', r['M003']);
+  return r['M003'] || null;
+}
+
 </script>
 
 </body>
