@@ -250,10 +250,11 @@ table.tt tr:last-child td{border-bottom:none}
 .finc .bhdr{background:#5e4a0a;color:var(--gold);font-weight:700}.trdc .bhdr{background:#5e0e0e;color:#f87171}
 
 /* COMPARE */
-.cmp-section{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px}
-.cmp-hd-row{display:grid;grid-template-columns:160px repeat(3,1fr) 100px;background:var(--card2);border-bottom:1px solid var(--border)}
+.cmp-scroll{overflow-x:auto;width:100%;padding-bottom:6px}
+.cmp-section{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow-x:auto;margin-bottom:14px}
+.cmp-hd-row{display:grid;grid-template-columns:160px repeat(var(--user-count,3),minmax(140px,1fr)) 110px;min-width:max-content;background:var(--card2);border-bottom:1px solid var(--border)}
 .cmp-hd-cell{padding:8px 11px;font-size:11px;font-weight:600;color:var(--grey);letter-spacing:1px;text-transform:uppercase}
-.cmp-data-row{display:grid;grid-template-columns:160px repeat(3,1fr) 100px;border-bottom:1px solid rgba(255,255,255,.04)}
+.cmp-data-row{display:grid;grid-template-columns:160px repeat(var(--user-count,3),minmax(140px,1fr)) 110px;min-width:max-content;border-bottom:1px solid rgba(255,255,255,.04)}
 .cmp-data-row:last-child{border-bottom:none}
 .cmp-cell{padding:8px 11px;font-size:12px}
 .cmp-cell.match{color:var(--grey);font-size:11px}
@@ -275,7 +276,7 @@ table.tt tr:last-child td{border-bottom:none}
   .sc-in{width:28px;height:28px;font-size:13px}
   .lb-row{grid-template-columns:26px 1fr repeat(3,42px)}
   .dl-banner{flex-direction:column;gap:10px}
-  .cmp-hd-row,.cmp-data-row{grid-template-columns:120px repeat(3,1fr) 80px}
+  .cmp-hd-row,.cmp-data-row{grid-template-columns:120px repeat(var(--user-count,3),minmax(120px,1fr)) 90px}
 }
 
 /* Real bracket sub-tabs */
@@ -566,7 +567,7 @@ table.tt tr:last-child td{border-bottom:none}
     <button class="fbtn" onclick="setCmpFilt('SF',this)">SF</button>
     <button class="fbtn" onclick="setCmpFilt('Final',this)">Final</button>
   </div>
-  <div id="cmp-content"></div>
+  <div class="cmp-scroll"><div id="cmp-content"></div></div>
 </div>
 
 <script>
@@ -2748,6 +2749,7 @@ function renderCompare(){
   matches.forEach(m=>{(byDate[m[3]]=byDate[m[3]]||[]).push(m)});
   const c=document.getElementById('cmp-content');
   c.innerHTML='';
+  c.style.setProperty('--user-count', USERS.length);
 
   const n = USERS.length;
 
@@ -2755,7 +2757,7 @@ function renderCompare(){
   const sid='cmp-grid-style';
   let sel=document.getElementById(sid);
   if(!sel){sel=document.createElement('style');sel.id=sid;document.head.appendChild(sel);}
-  sel.textContent=`.cmp-hd-row,.cmp-data-row{grid-template-columns:160px repeat(${n},1fr) 110px}`;
+  sel.textContent=`.cmp-hd-row,.cmp-data-row{grid-template-columns:160px repeat(${n},minmax(140px,1fr)) 110px;}`;
 
   const stageLockedMap={};
   STAGES.forEach(s=>{stageLockedMap[s.key]=isLocked(s.key);});
@@ -2847,6 +2849,7 @@ function renderCompare(){
   matches.forEach(m=>{(byDate[m[3]]=byDate[m[3]]||[]).push(m)});
   const c=document.getElementById('cmp-content');
   c.innerHTML='';
+  c.style.setProperty('--user-count', USERS.length);
 
   // Determine which stages are locked (deadline passed = visible to all)
   // A match is "visible" in compare only if its stage deadline has passed
