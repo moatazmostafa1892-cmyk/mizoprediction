@@ -203,11 +203,11 @@ nav{position:sticky;top:0;z-index:200;background:rgba(7,26,15,.96);backdrop-filt
 .save-btn-main:hover{background:var(--gold2)}
 
 /* DASHBOARD */
-.dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:20px}
-.dcard{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:15px 18px}
-.dcard-lbl{font-size:10px;letter-spacing:2px;color:var(--grey);text-transform:uppercase;margin-bottom:5px}
-.dcard-val{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--gold)}
-.dcard-sub{font-size:11px;color:var(--grey);margin-top:2px}
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-bottom:14px}
+.dcard{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 12px}
+.dcard-lbl{font-size:9px;letter-spacing:1.5px;color:var(--grey);text-transform:uppercase;margin-bottom:2px}
+.dcard-val{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gold);line-height:1}
+.dcard-sub{font-size:10px;color:var(--grey);margin-top:2px;line-height:1.25}
 .lb-wrap{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px}
 .lb-head{background:var(--card2);padding:11px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
 .lb-head h3{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);letter-spacing:1px}
@@ -688,7 +688,7 @@ table.tt tr:last-child td{border-bottom:none}
 <!-- COMPARE -->
 <div id="compare" class="sec">
   <div class="sec-title">Compare & Results</div>
-  <div class="sec-sub">Results auto-populate from live data · green = correct result · gold = exact score · manual entry also supported</div>
+  <div class="sec-sub">Predictions stay hidden until the actual result is saved/synced for that match · green = correct result · gold = exact score</div>
   <div class="toolbar">
     <button class="fbtn act" onclick="setCmpFilt('all',this)">All</button>
     <button class="fbtn" onclick="setCmpFilt('MD1',this)">GW1</button>
@@ -965,8 +965,9 @@ async function loadPredictions(u) {
   return _cache[`pred_${u}`];
 }
 function sp(u, data) {
-  _cache[`pred_${u}`] = data;
-  fbSet(`predictions/${fbKey(u)}`, data);
+  const safeData = stripLockedPredictionChanges(u, data);
+  _cache[`pred_${u}`] = safeData;
+  fbSet(`predictions/${fbKey(u)}`, safeData);
 }
 
 // ── Actuals ───────────────────────────────────────────────────────────
@@ -1025,8 +1026,9 @@ function loadPredBracket(user) {
   return _cache[`pred_br_${user}`] || {};
 }
 function savePredBracket(user, data) {
-  _cache[`pred_br_${user}`] = data;
-  fbSet(`pred_brackets/${fbKey(user)}`, data);
+  const safeData = stripLockedBracketChanges(user, data);
+  _cache[`pred_br_${user}`] = safeData;
+  fbSet(`pred_brackets/${fbKey(user)}`, safeData);
 }
 
 // ── Celebration shown flags ───────────────────────────────────────────
@@ -1465,6 +1467,59 @@ function startResultPolling() {
 function isLocked(stageKey) {
   const s = STAGES.find(x=>x.key===stageKey);
   return s ? Date.now() >= new Date(s.deadline).getTime() : true;
+}
+
+// Hard guard: map any match ID to its stage and refuse prediction writes after deadline.
+// This protects Firebase writes even if the UI still has stale editable inputs open.
+function stageForMatch(mid) {
+  const m = ALL.find(x => x[0] === mid);
+  if(!m) return null;
+  if(m[1] === '3P') return 'Final';
+  return m[1];
+}
+function isPredictionLockedForMatch(mid) {
+  const st = stageForMatch(mid);
+  return !st || isLocked(st);
+}
+function isCompareUnlockedForMatch(mid) {
+  // Compare should reveal everyone only after the real result exists.
+  // This keeps predictions hidden during the match and after deadline until actual score is saved/synced.
+  const act = la()[mid];
+  return !!(act && act.hg !== undefined && act.ag !== undefined);
+}
+function stripLockedPredictionChanges(user, incoming) {
+  const existing = lp(user) || {};
+  const safe = Object.assign({}, incoming || {});
+  Object.keys(safe).forEach(mid => {
+    if(isPredictionLockedForMatch(mid)) {
+      if(existing[mid] !== undefined) safe[mid] = existing[mid];
+      else delete safe[mid];
+    }
+  });
+  return safe;
+}
+function bracketMatchIdsFromPayload(data) {
+  const ids = new Set();
+  Object.keys(data || {}).forEach(k => {
+    const m = k.match(/^(M\d{3})_/);
+    if(m) ids.add(m[1]);
+  });
+  return [...ids];
+}
+function stripLockedBracketChanges(user, incoming) {
+  const existing = loadPredBracket(user) || {};
+  const safe = Object.assign({}, incoming || {});
+  bracketMatchIdsFromPayload(safe).forEach(mid => {
+    if(isPredictionLockedForMatch(mid)) {
+      Object.keys(safe).forEach(k => {
+        if(k.startsWith(mid + '_')) {
+          if(existing[k] !== undefined) safe[k] = existing[k];
+          else delete safe[k];
+        }
+      });
+    }
+  });
+  return safe;
 }
 
 function getActiveStage() {
@@ -2118,10 +2173,15 @@ let _editingGrpId = null; // null = new group, string = editing existing
 
 // ── Tab visibility: only show tab to logged-in user if they are in that group
 function visibleGroupsForCurrentUser() {
-  // All logged-in users see all groups — the leaderboard filters correctly per group
-  // No need to hide tabs since data isn't sensitive
-  if(!currentUser) return getAllLbGroups().filter(g => g.id === 'all');
-  return getAllLbGroups();
+  // Privacy rule: a league/group tab is visible only to members of that league.
+  // The built-in All Players tab remains visible as the default overview.
+  const all = getAllLbGroups();
+  if(!currentUser) return all.filter(g => g.id === 'all');
+  return all.filter(g => {
+    if(g.id === 'all') return true;
+    if(!Array.isArray(g.players)) return true;
+    return g.players.includes(currentUser);
+  });
 }
 
 function renderLbTabs() {
@@ -2171,8 +2231,8 @@ function renderLbTabs() {
 }
 
 function renderLeaderboard() {
-  const groups = getAllLbGroups();
-  const active = groups.find(g=>g.id===activeLbGroup)||groups[0];
+  const groups = visibleGroupsForCurrentUser();
+  const active = groups.find(g=>g.id===activeLbGroup)||groups[0]||getAllLbGroups()[0];
   const titleEl = document.getElementById('lb-tab-title');
   if(titleEl) titleEl.textContent = active.name;
   const players = active.players ? active.players.filter(p=>USERS.includes(p)) : [...USERS];
@@ -2520,7 +2580,7 @@ function renderPredList() {
 
 function markChg(mid){pendingChanges[mid]=true}
 function autoSave(mid){
-  if(!currentUser||!pendingChanges[mid]||isLocked(activeStage)) return;
+  if(!currentUser||!pendingChanges[mid]||isPredictionLockedForMatch(mid)) return;
   const h=document.getElementById(`hg-${mid}`), a=document.getElementById(`ag-${mid}`);
   if(!h||!a||h.value===''||a.value==='') return;
   const preds=lp(currentUser);
@@ -2537,6 +2597,7 @@ function saveAll(){
   const stage=STAGES.find(s=>s.key===activeStage);
   const preds=lp(currentUser);
   stage.mids.forEach(mid=>{
+    if(isPredictionLockedForMatch(mid)) return;
     const h=document.getElementById(`hg-${mid}`),a=document.getElementById(`ag-${mid}`);
     if(h&&a&&h.value!==''&&a.value!=='') preds[mid]={hg:+h.value,ag:+a.value};
   });
@@ -2575,9 +2636,11 @@ function loadPredBracket(user) {
 }
 function savePredBracket(user, data) {
   const k = PRED_BR_KEY(user);
-  _cache[k] = data;
+  const safeData = stripLockedBracketChanges(user, data);
+  _cache[k] = safeData;
+  _cache[`pred_br_${user}`] = safeData;
 
-  fbSet(`pred_brackets/${fbKey(user)}`, data);
+  fbSet(`pred_brackets/${fbKey(user)}`, safeData);
 }
 
 // Full bracket progression map — which R32 match feeds which R16 slot and position
@@ -2608,6 +2671,7 @@ const BRACKET_FLOW = {
 // Click a team in the predictions bracket to advance them to the next round
 function predBracketPick(matchId, team, teamSlot) {
   if(!currentUser) { showToast('Select a user first'); return; }
+  if(isPredictionLockedForMatch(matchId)) { showToast('🔒 This bracket stage is locked — predictions are read-only'); return; }
   const user = currentUser;
   const pb = loadPredBracket(user);
 
@@ -3285,9 +3349,6 @@ function renderCompare(){
   if(!sel){sel=document.createElement('style');sel.id=sid;document.head.appendChild(sel);}
   sel.textContent=`.cmp-hd-row,.cmp-data-row{grid-template-columns:160px repeat(${n},minmax(140px,1fr)) 110px;}`;
 
-  const stageLockedMap={};
-  STAGES.forEach(s=>{stageLockedMap[s.key]=isLocked(s.key);});
-
   Object.entries(byDate).forEach(([date,ms])=>{
     const label=new Date(date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long'});
     const sec=document.createElement('div');
@@ -3302,11 +3363,8 @@ function renderCompare(){
 
     ms.forEach(m=>{
       const [mid,,,,home,away]=m;
-      const stageKey=m[1];
-      const stageLocked=stageLockedMap[stageKey]||false;
       const act=actuals[mid];
-      const matchPlayed=!!(act&&act.hg!==undefined);
-      const visible=stageLocked||matchPlayed; // show once stage locked OR match played
+      const visible=isCompareUnlockedForMatch(mid); // show everyone only when actual result is saved/synced
 
       const isAuto=act&&act.source&&act.source!=='manual';
       const row=document.createElement('div');
