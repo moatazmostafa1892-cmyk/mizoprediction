@@ -1,7 +1,6 @@
-{
-  "name": "wc2026-sync",
-  "version": "1.0.0",
-  "dependencies": {
-    "@netlify/functions": "^2.0.0"
-  }
-}
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
