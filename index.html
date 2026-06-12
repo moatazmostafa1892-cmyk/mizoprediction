@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>⚽ WC 2026 Predictions</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=MYsnvYoSXzxo7Mbgp9jZSU_159M15pZJggUZnS7k02uD6w-uowBgBcgbUZj6Qxyu2HkXUsLv93K-tSV_VOmY7HxlCNtkin2ASj_tAthk9dk-tTrV6br9hetPImgH0bkXFQK9YHAI_l06pZQE8Sm-9wf1Cp6ylsgRtHQ_JY_YvTwJYUWmw1vFEGmgLKHeUqQevbINQl74Md-I0ev4g22junUd3sgYiW0MpAX4XQUMu4PdBlzpXEARYm0H8-F-Oia2Zj-hZC-x8FIC2K8b2Fl7Spink0X8txP26PEkz1cvekarf4w9yC6pcfhL7kJL41Oh1IqtQxVT3DhZJknQ4pzAHTTphZfvW0dtHkIGOK-9qd0" charset="UTF-8"></script><style>
+<style>
 :root{
   --pitch:#071a0f;--card:#0b2015;--card2:#0f2a1c;--border:#1a3a26;
   --gold:#f5c518;--gold2:#b8941a;--white:#eef4ee;--grey:#6b8a76;
@@ -772,7 +772,7 @@ table.tt tr:last-child td{border-bottom:none}
 <!-- COMPARE -->
 <div id="compare" class="sec">
   <div class="sec-title">Compare & Results</div>
-  <div class="sec-sub">Results auto-populate from live data only · actual scores are read-only</div>
+  <div class="sec-sub">Results auto-populate once · finished results lock and stop background updates</div>
   <div class="toolbar">
     <button class="fbtn act" onclick="setCmpFilt('all',this)">All</button>
     <button class="fbtn" onclick="setCmpFilt('MD1',this)">GW1</button>
@@ -788,6 +788,55 @@ table.tt tr:last-child td{border-bottom:none}
 </div>
 
 <script>
+
+// ── FINAL ACTUAL RESULT LOCK ──────────────────────────────────────
+// A final actual result is written once, then locked.
+// Locked results are skipped by all future background/live result checks.
+function hasActualScore(mid){
+  const a = ACTUAL && ACTUAL[mid];
+  return !!(a && a.hg !== '' && a.ag !== '' && a.hg != null && a.ag != null);
+}
+function isActualFinalLocked(mid){
+  const a = ACTUAL && ACTUAL[mid];
+  return !!(hasActualScore(mid) && (a.locked === true || a.final === true || a.status === 'FT' || a.source === 'auto-final'));
+}
+function lockActualFinal(mid){
+  if(!ACTUAL || !ACTUAL[mid] || !hasActualScore(mid)) return;
+  ACTUAL[mid].locked = true;
+  ACTUAL[mid].final = true;
+  ACTUAL[mid].status = ACTUAL[mid].status || 'FT';
+  ACTUAL[mid].source = 'auto-final';
+  ACTUAL[mid].lockedAt = ACTUAL[mid].lockedAt || new Date().toISOString();
+  try{
+    const cache = JSON.parse(localStorage.getItem('wc2026_final_actuals') || '{}');
+    cache[mid] = ACTUAL[mid];
+    localStorage.setItem('wc2026_final_actuals', JSON.stringify(cache));
+  }catch(e){}
+}
+function loadFinalActualCache(){
+  try{
+    const cache = JSON.parse(localStorage.getItem('wc2026_final_actuals') || '{}');
+    Object.keys(cache).forEach(mid=>{
+      if(cache[mid] && cache[mid].hg != null && cache[mid].ag != null){
+        ACTUAL[mid] = cache[mid];
+        lockActualFinal(mid);
+      }
+    });
+  }catch(e){}
+}
+function normalizeFinalActualLocks(){
+  if(!ACTUAL) return;
+  Object.keys(ACTUAL).forEach(mid=>{
+    if(isActualFinalLocked(mid) || hasActualScore(mid) && ACTUAL[mid].source === 'auto-final'){
+      lockActualFinal(mid);
+    }
+  });
+}
+function shouldSkipActualFetch(mid){
+  return isActualFinalLocked(mid);
+}
+
+loadFinalActualCache();
 // ═══════════════════════════════════════════════════════════════════
 // ── MATCH DATA ──────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
@@ -1469,6 +1518,8 @@ async function fetchAllResults() {
 }
 
 async function syncResultToFirebase(results) {
+  if(shouldSkipActualFetch(results)) return ACTUAL[results]; // skip final locked actual result
+
   if(!results || !Object.keys(results).length) return;
   const existing = la();
   let changed = 0;
@@ -1520,7 +1571,7 @@ function scheduleAllResultFetches() {
   // 2. Poll every 2 min during today's matches, every 30 min otherwise
   startResultPolling();
   // 3. Schedule future matches
-  ALL.forEach(m => {
+  ALL.filter(m=>!shouldSkipActualFetch(m[0])).forEach(m => {
     if(new Date(m[8]).getTime() + 115*60000 > now) scheduleMatchResult(m);
   });
 }
@@ -1851,6 +1902,8 @@ function doLogin() {
     document.getElementById('login-pin').value = '';
     document.getElementById('login-pin').focus();
   }
+
+  lockActualFinal(results);
 }
 
 // ── SIGNUP ────────────────────────────────────────────────────────────
@@ -3725,6 +3778,25 @@ try {
   syncUserGlobals();
   rebuildUserModalList();
 }
+
+// Defensive wrapper: any future result-sync call skips final locked matches.
+(function(){
+  const names = ['fetchActualForMatch','fetchLiveResult','fetchMatchResult','syncMatchResult','fetchAndSyncResult'];
+  names.forEach(name=>{
+    const fn = window[name];
+    if(typeof fn === 'function' && !fn.__finalLockWrapped){
+      const wrapped = function(mid, ...rest){
+        if(shouldSkipActualFetch(mid)) return Promise.resolve(ACTUAL[mid]);
+        return fn.call(this, mid, ...rest);
+      };
+      wrapped.__finalLockWrapped = true;
+      window[name] = wrapped;
+    }
+  });
+})();
+
+
+normalizeFinalActualLocks();
 </script>
 
 
