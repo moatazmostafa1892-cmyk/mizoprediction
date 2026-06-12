@@ -295,11 +295,80 @@ table.tt tr:last-child td{border-bottom:none}
   transform:translateY(80px);opacity:0;transition:.3s;pointer-events:none}
 .toast.show{transform:translateY(0);opacity:1}
 
+/* ── MOBILE ──────────────────────────────────────────────────────── */
 @media(max-width:640px){
-  .sc-in{width:28px;height:28px;font-size:13px}
-  .lb-row{grid-template-columns:26px 1fr repeat(3,42px)}
-  .dl-banner{flex-direction:column;gap:10px}
+  /* Nav */
+  nav{height:44px;padding:0 8px;gap:1px}
+  .logo{font-size:15px;margin-right:6px}
+  .nav-btn{font-size:11px;padding:4px 8px}
+  #user-pill{font-size:11px;padding:3px 9px}
+
+  /* Hero */
+  .hero{padding:22px 12px 18px}
+  .hero-title{font-size:clamp(32px,10vw,52px)}
+  .hero-stats{gap:14px;margin-top:14px}
+  .hstat-val{font-size:24px}
+  .hstat-lbl{font-size:9px}
+
+  /* Sections */
+  .sec{padding:12px 10px 60px}
+  .sec-title{font-size:22px}
+
+  /* Dashboard — 2 cards per row */
+  .dash-grid{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+  .dcard{padding:10px 11px}
+  .dcard-val{font-size:26px}
+  .dcard-sub{font-size:10px}
+
+  /* Leaderboard */
+  .lb-row{grid-template-columns:26px 1fr 42px 42px 42px !important;gap:3px;padding:8px 10px}
+
+  /* Deadline banner */
+  .dl-banner{flex-direction:column;gap:8px}
+
+  /* Match cards */
+  .mcard{-webkit-tap-highlight-color:transparent;margin-bottom:7px}
+  .tside{padding:8px 10px}
+  .tname{font-size:12px}
+  .sc-in{width:34px;height:34px;font-size:16px}
+  .sc-sep{font-size:14px}
+
+  /* Stage tabs — scroll horizontally */
+  .stage-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap !important;padding-bottom:4px}
+  .stab{flex-shrink:0;font-size:11px;padding:5px 10px}
+
+  /* Compare */
   .cmp-hd-row,.cmp-data-row{grid-template-columns:120px repeat(var(--user-count,3),minmax(120px,1fr)) 90px}
+  #cmp-content{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+  /* Groups — single column */
+  .grp-grid{grid-template-columns:1fr}
+
+  /* Leaderboard tabs */
+  #lb-tabs{gap:4px}
+  .lb-tab{font-size:11px;padding:5px 10px}
+  .lb-tab-add{width:28px;height:28px;font-size:16px}
+
+  /* Deadline cards — 2 per row */
+  #all-dl{grid-template-columns:repeat(2,1fr) !important;gap:6px}
+
+  /* Auth modal */
+  .modal{width:95vw;padding:20px 16px;border-radius:12px}
+
+  /* Bracket */
+  .br-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+  /* Celebration */
+  .cel-card{padding:26px 18px}
+  .cel-name{font-size:44px}
+  .cel-headline{font-size:32px}
+}
+
+/* Prevent iOS auto-zoom on input focus (must be >= 16px) */
+@media(max-width:640px){
+  input,select,textarea{font-size:16px !important}
+  .sc-in{font-size:16px !important;width:34px;height:34px}
+  .login-input.pin-input{font-size:20px !important;letter-spacing:8px}
 }
 
 /* Real bracket sub-tabs */
@@ -413,42 +482,6 @@ table.tt tr:last-child td{border-bottom:none}
 .grp-modal-ok:hover{background:var(--gold2)}
 .grp-modal-cancel{padding:10px 16px;background:var(--card2);color:var(--grey);
   border:1px solid var(--border);border-radius:8px;font:500 14px 'Inter',sans-serif;cursor:pointer}
-
-
-
-/* ── MOBILE POLISH ─────────────────────────────────────────────── */
-@media(max-width:720px){
-  body{font-size:13px}
-  nav{height:auto;min-height:48px;padding:6px 8px;gap:4px;position:sticky;top:0}
-  .logo{font-size:18px;margin-right:6px;letter-spacing:2px}
-  .nav-btn{font-size:11px;padding:7px 9px}
-  #user-pill{padding:5px 9px;font-size:11px}
-  .hero{padding:24px 12px 18px}
-  .hero-title{font-size:clamp(36px,12vw,54px)}
-  .hero-stats{gap:12px;margin-top:16px}
-  .hstat-val{font-size:27px}
-  .hstat-lbl{font-size:8px;letter-spacing:1px}
-  .sec{padding:14px 10px 48px}
-  .dash-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-  .dcard{padding:8px 10px}
-  .dcard-val{font-size:24px}
-  .dl-banner{padding:10px 12px;align-items:flex-start}
-  .dl-clock{width:100%;justify-content:space-between;gap:5px}
-  .dl-unit{min-width:0;flex:1;padding:5px 4px}
-  .dl-num{font-size:22px}
-  .stage-tabs,.toolbar,.lb-tabs{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
-  .stab,.fbtn,.lb-tab{flex-shrink:0}
-  .mcard{grid-template-columns:1fr 86px 1fr;margin-bottom:7px}
-  .tside{padding:8px 7px;min-width:0}
-  .tname{font-size:12px;white-space:normal;line-height:1.15}
-  .sc-center{padding:6px 5px}
-  .sc-in{width:30px;height:30px;font-size:14px}
-  .grp-grid{grid-template-columns:1fr}
-  .cmp-hd-row,.cmp-data-row{grid-template-columns:118px repeat(var(--user-count,3),minmax(96px,1fr)) 86px!important}
-  .cmp-hd-cell,.cmp-cell{padding:7px 6px;font-size:11px}
-  .actual-in{width:48px;font-size:12px}
-  .modal,.adduser-modal,.grp-modal,.pin-modal{width:94vw;padding:22px 18px}
-}
 
 </style>
 </head>
@@ -724,7 +757,7 @@ table.tt tr:last-child td{border-bottom:none}
 <!-- COMPARE -->
 <div id="compare" class="sec">
   <div class="sec-title">Compare & Results</div>
-  <div class="sec-sub">Predictions unlock per match/day after its deadline or when an actual result is saved · live actual scores refresh faster</div>
+  <div class="sec-sub">Results auto-populate from live data · green = correct result · gold = exact score · manual entry also supported</div>
   <div class="toolbar">
     <button class="fbtn act" onclick="setCmpFilt('all',this)">All</button>
     <button class="fbtn" onclick="setCmpFilt('MD1',this)">GW1</button>
@@ -1279,6 +1312,13 @@ function refreshUI() {
   }
 }
 
+// Instant re-sync when user switches back to this tab
+document.addEventListener('visibilitychange', function() {
+  if(!document.hidden && FB_READY) {
+    fbGet('').then(all => { if(all && applySnapshot(all)) refreshUI(); });
+  }
+});
+
 function startRealtimeSync() {
   if(!FB_READY) return;
   if(_sseSource) { _sseSource.close(); _sseSource = null; }
@@ -1291,54 +1331,24 @@ function startRealtimeSync() {
         if(msg.path === '/') {
           // Full snapshot — apply directly
           if(applySnapshot(msg.data)) refreshUI();
-        } else if(msg.path && msg.path.startsWith('/actuals')) {
-          const actuals = Object.assign({}, la());
-          if(msg.path === '/actuals') {
-            Object.assign(actuals, msg.data || {});
-          } else {
-            const mid = msg.path.split('/')[2];
-            if(mid) {
-              if(msg.data === null) delete actuals[mid];
-              else actuals[mid] = msg.data;
-            }
-          }
-          _cache['actuals'] = actuals;
-          refreshUI();
         } else {
           // Partial update — re-fetch full DB to stay consistent
           fbGet('').then(all => { if(all && applySnapshot(all)) refreshUI(); });
         }
       } catch(err) { }
     });
-    _sseSource.addEventListener('patch', e => {
-      try {
-        const msg = JSON.parse(e.data);
-        if(msg.path && msg.path.startsWith('/actuals')) {
-          const actuals = Object.assign({}, la());
-          if(msg.path === '/actuals') Object.assign(actuals, msg.data || {});
-          else {
-            const mid = msg.path.split('/')[2];
-            if(mid) {
-              if(msg.data === null) delete actuals[mid];
-              else actuals[mid] = msg.data;
-            }
-          }
-          _cache['actuals'] = actuals;
-          refreshUI();
-          return;
-        }
-      } catch(err) {}
+    _sseSource.addEventListener('patch', () => {
       fbGet('').then(all => { if(all && applySnapshot(all)) refreshUI(); });
     });
     _sseSource.onerror = () => {
       if(_sseSource) { _sseSource.close(); _sseSource = null; }
-      if(!_pollTimer) _pollTimer = setInterval(fallbackPoll, 5000);
+      if(!_pollTimer) _pollTimer = setInterval(fallbackPoll, 2000);
     };
     _sseSource.onopen = () => {
       if(_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
     };
   } catch(e) {
-    _pollTimer = setInterval(fallbackPoll, 5000);
+    _pollTimer = setInterval(fallbackPoll, 2000);
   }
 }
 
@@ -1510,61 +1520,29 @@ function scheduleAllResultFetches() {
 let _resultPollTimer = null;
 function startResultPolling() {
   if(_resultPollTimer) clearInterval(_resultPollTimer);
-  // Check frequently around live matches so actual scores appear faster.
+  // Check every 2 minutes if any match is live or recently finished
   _resultPollTimer = setInterval(async () => {
     const now = Date.now();
     const anyActive = ALL.some(m => {
       const ko = new Date(m[8]).getTime();
-      // Active window: from 10 min before kickoff to 160 min after.
-      return now >= ko - 10 * 60000 && now <= ko + 160 * 60000;
+      // Match is "active" window: from kickoff to 140 min after
+      return now >= ko && now <= ko + 140 * 60000;
     });
     // If a match is active, sync results. Otherwise skip (save API calls)
     if(anyActive) {
       const r = await fetchAllResults();
       if(r) syncResultToFirebase(r);
     }
-  }, 30000); // every 30 seconds during live windows
+  }, 2 * 60000); // every 2 minutes
 }
 
 
 // ═══════════════════════════════════════════════════════════════════
 // ── DEADLINE ENGINE ──────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
-function getMatchById(mid) {
-  return ALL.find(x => x[0] === mid) || null;
-}
-function matchDeadline(mid) {
-  const m = getMatchById(mid);
-  return m ? new Date(m[8]).getTime() : 0;
-}
-function isMatchLocked(mid) {
-  const dl = matchDeadline(mid);
-  return !dl || Date.now() >= dl;
-}
-// A stage tab is only fully locked when every match inside it has kicked off.
-// This keeps GW1/GW2/GW3 editable day-by-day instead of locking the whole GW at once.
 function isLocked(stageKey) {
   const s = STAGES.find(x=>x.key===stageKey);
-  if(!s || !s.mids || !s.mids.length) return true;
-  return s.mids.every(mid => isMatchLocked(mid));
-}
-function nextDeadlineInStage(stageKey) {
-  const s = STAGES.find(x=>x.key===stageKey);
-  if(!s) return null;
-  const upcoming = s.mids
-    .map(mid => getMatchById(mid))
-    .filter(Boolean)
-    .filter(m => !isMatchLocked(m[0]))
-    .sort((a,b) => new Date(a[8]) - new Date(b[8]));
-  if(!upcoming.length) return null;
-  const first = upcoming[0];
-  const day = first[3];
-  return {
-    deadline: first[8],
-    date: day,
-    label: new Date(day).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long'}),
-    mids: upcoming.filter(m => m[3] === day).map(m => m[0])
-  };
+  return s ? Date.now() >= new Date(s.deadline).getTime() : true;
 }
 
 
@@ -1600,7 +1578,25 @@ function stageForMatch(mid) {
   if(m[1] === '3P') return 'Final';
   return m[1];
 }
+// Per-match lock: locks at the individual match's kickoff, not the stage deadline
+function isMatchLocked(mid) {
+  const m = ALL.find(x=>x[0]===mid);
+  if(!m) return true;
+  return Date.now() >= new Date(m[8]).getTime();
+}
+// Returns a human-readable countdown string until kickoff, or null if already kicked off
+function matchTimeLeft(mid) {
+  const m = ALL.find(x=>x[0]===mid);
+  if(!m) return null;
+  const ms = new Date(m[8]).getTime() - Date.now();
+  if(ms <= 0) return null;
+  const h = Math.floor(ms/3600000), min = Math.floor((ms%3600000)/60000);
+  if(h >= 24) return `${Math.floor(h/24)}d ${h%24}h`;
+  if(h > 0) return `${h}h ${min}m`;
+  return `${min}m`;
+}
 function isPredictionLockedForMatch(mid) {
+  // Lock each match individually at its own kickoff time
   return isMatchLocked(mid);
 }
 function stripLockedPredictionChanges(user, incoming) {
@@ -1639,7 +1635,7 @@ function stripLockedBracketChanges(user, incoming) {
 }
 
 function getActiveStage() {
-  return STAGES.find(s => !isLocked(s.key)) || null;
+  return STAGES.find(s => Date.now() < new Date(s.deadline).getTime()) || null;
 }
 
 function timeLeft(dl) {
@@ -1652,17 +1648,16 @@ function timeLeft(dl) {
 function dlBannerHTML(stageKey) {
   const s = STAGES.find(x=>x.key===stageKey);
   if(!s) return '';
-  const next = nextDeadlineInStage(stageKey);
-  if(!next) return `<div class="dl-banner locked"><div class="dl-left">
+  const tl = timeLeft(s.deadline);
+  if(!tl) return `<div class="dl-banner locked"><div class="dl-left">
     <div class="dl-stage">🔒 ${s.label}</div>
-    <div class="dl-info">All match-day deadlines in this stage have passed · Predictions are read-only</div></div>
+    <div class="dl-info">Deadline passed · Predictions locked for this stage</div></div>
     <span class="dl-badge dl-locked">Locked</span></div>`;
-  const tl = timeLeft(next.deadline);
-  const urgent = tl && tl.diff < 21600000; // 6h
+  const urgent = tl.diff < 21600000; // 6h
   return `<div class="dl-banner ${urgent?'urgent':'open'}" id="dl-live">
     <div class="dl-left">
-      <div class="dl-stage">⏱ ${s.label} · ${next.label}</div>
-      <div class="dl-info">Daily deadline: this day locks at first kickoff · ${new Date(next.deadline).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'UTC'})} UTC · ${next.mids.length} match${next.mids.length!==1?'es':''}</div>
+      <div class="dl-stage">⏱ ${s.label} Deadline</div>
+      <div class="dl-info">Locks before first match · ${new Date(s.deadline).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'UTC'})} UTC</div>
     </div>
     <div class="dl-clock">
       <div class="dl-unit ${urgent?'urgent':''}"><div class="dl-num" id="dlD">${tl.d}</div><div class="dl-lbl">Days</div></div>
@@ -1678,9 +1673,9 @@ let _cdTimer = null;
 function startCD(stageKey) {
   if(_cdTimer) clearInterval(_cdTimer);
   _cdTimer = setInterval(() => {
-    const next = nextDeadlineInStage(stageKey);
-    if(!next) return;
-    const tl = timeLeft(next.deadline);
+    const s = STAGES.find(x=>x.key===stageKey);
+    if(!s) return;
+    const tl = timeLeft(s.deadline);
     if(!tl) { clearInterval(_cdTimer); renderPreds(); return; }
     const [d,h,m,sv] = [document.getElementById('dlD'),document.getElementById('dlH'),
                         document.getElementById('dlM'),document.getElementById('dlS')];
@@ -2485,21 +2480,16 @@ function renderDashboard() {
   dlDiv.innerHTML='';
   const active=getActiveStage();
   STAGES.forEach(s=>{
-    const next = nextDeadlineInStage(s.key);
-    const tl = next ? timeLeft(next.deadline) : null;
+    const tl=timeLeft(s.deadline);
     const isCurr=active?.key===s.key;
-    let bg='rgba(107,138,118,.07)',bc='var(--border)',badge='', dateTxt='All days locked';
+    let bg='rgba(107,138,118,.07)',bc='var(--border)',badge='';
     if(!tl){bg='rgba(239,68,68,.04)';bc='rgba(239,68,68,.2)';badge='<span class="dl-badge dl-locked" style="font-size:10px">🔒 Locked</span>';}
     else if(isCurr){bg='rgba(34,197,94,.04)';bc='rgba(34,197,94,.28)';
-      dateTxt = `${next.label} · ${new Date(next.deadline).toLocaleString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'UTC'})} UTC`;
       badge=`<span class="dl-badge dl-open" style="font-size:10px">✅ ${tl.d}d ${tl.h}h left</span>`;}
-    else{
-      dateTxt = next ? `${next.label} · ${new Date(next.deadline).toLocaleString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'UTC'})} UTC` : dateTxt;
-      badge=`<span style="font-size:10px;color:var(--grey)">Next daily lock</span>`;
-    }
+    else{badge=`<span style="font-size:10px;color:var(--grey)">Opens after ${STAGES[STAGES.indexOf(s)-1]?.label||'previous'}</span>`;}
     dlDiv.innerHTML+=`<div style="background:${bg};border:1px solid ${bc};border-radius:8px;padding:10px 13px">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);letter-spacing:1px">${s.label}</div>
-      <div style="font-size:10px;color:var(--grey);margin-bottom:5px">${dateTxt}</div>
+      <div style="font-size:10px;color:var(--grey);margin-bottom:5px">${new Date(s.deadline).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'UTC'})} UTC</div>
       ${badge}</div>`;
   });
 }
@@ -2589,33 +2579,37 @@ function renderPredList() {
   const stage = STAGES.find(s=>s.key===activeStage);
   if(!stage) return;
   const locked = isLocked(activeStage);
-  const hasLockedMatches = stage.mids.some(mid => isPredictionLockedForMatch(mid));
   const preds = lp(currentUser);
   const actuals = la();
   const stMids = new Set(stage.mids);
   let matches = ALL.filter(m=>stMids.has(m[0]));
 
-  if(predFilt==='pending') matches = matches.filter(m=>{
-    const p=preds[m[0]];
-    return !isPredictionLockedForMatch(m[0]) && (!p||p.hg===undefined);
-  });
-  if(predFilt==='done') matches = matches.filter(m=>{const p=preds[m[0]];return p&&p.hg!==undefined});
+  // For locked stages — only show 'all' and 'done'; pending makes no sense
+  if(locked && predFilt==='pending') {
+    // Override filter silently — show all
+  }
+  if(!locked) {
+    if(predFilt==='pending') matches = matches.filter(m=>{const p=preds[m[0]];return!p||p.hg===undefined});
+    if(predFilt==='done') matches = matches.filter(m=>{const p=preds[m[0]];return p&&p.hg!==undefined});
+  }
 
   const list = document.getElementById('pred-list');
   list.innerHTML = '';
 
-  if(hasLockedMatches) {
-    const lockedCount = stage.mids.filter(mid=>isPredictionLockedForMatch(mid)).length;
+  // Header for locked stage — explain it's read-only
+  if(locked) {
+    const pCount = stage.mids.filter(mid=>{const p=preds[mid];return p&&p.hg!==undefined}).length;
     list.innerHTML += `<div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);
       border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:var(--blue)">
-      🔒 <strong>Daily deadlines active</strong> — ${lockedCount}/${stage.mids.length} match${lockedCount!==1?'es':''} in this stage are locked. Future days remain editable until their own first kickoff.
+      👁 <strong>Read-only view</strong> — Deadline passed. Showing your ${pCount} prediction${pCount!==1?'s':''} for this stage.
+      ${pCount < stage.mids.length ? `<span style="color:var(--red);margin-left:6px">${stage.mids.length-pCount} not entered.</span>` : ''}
     </div>`;
   }
 
   if(!matches.length){
     list.innerHTML += `<p style="color:var(--grey);padding:16px 0">${
-      predFilt==='done'?'No predictions entered yet.':
-      predFilt==='pending'?'All editable matches are done or already locked.':'No matches to show.'
+      !locked && predFilt==='done'?'No predictions entered yet.':
+      !locked && predFilt==='pending'?'All done for this stage! 🎉':'No matches to show.'
     }</p>`;
     return;
   }
@@ -2634,9 +2628,11 @@ function renderPredList() {
       const saved = hgv!==''&&agv!=='';
       const hasResult = a && a.hg!==undefined;
 
-      const matchLocked = isPredictionLockedForMatch(mid);
+      // Per-match: lock at kickoff, not at stage deadline
+      const matchLocked = locked || isMatchLocked(mid);
+      const tLeft = matchTimeLeft(mid);
       if(matchLocked) {
-        // Read-only display — this match/day deadline has passed
+        // Read-only display — no inputs
         const scoreTxt = saved
           ? `<div style="display:flex;align-items:center;gap:6px">
               <span style="font-family:'Roboto Mono',monospace;font-size:17px;font-weight:700;color:var(--gold)">${hgv}</span>
@@ -2681,6 +2677,7 @@ function renderPredList() {
               <input type="number" class="sc-in" id="ag-${mid}" value="${agv}" placeholder="–" min="0" max="20"
                 oninput="markChg('${mid}')" onblur="autoSave('${mid}')">
             </div>
+            ${tLeft?`<div style="font-size:9px;color:var(--gold);text-align:center;margin-top:2px;letter-spacing:.5px">⏱ ${tLeft}</div>`:''}
             ${hasResult?`<div class="result-row">${a.hg} – ${a.ag}</div><div class="result-label">Actual</div>`:''}
           </div>
           <div class="tside away"><div class="tname">${away}</div></div>
@@ -2708,7 +2705,7 @@ function autoSave(mid){
 }
 function saveAll(){
   if(!currentUser){toast('Select a user first');return}
-  if(isLocked(activeStage)){toast('🔒 This stage is fully locked — predictions are read-only');return}
+  if(isLocked(activeStage)){toast('🔒 This stage is locked — predictions are read-only');return}
   const stage=STAGES.find(s=>s.key===activeStage);
   const preds=lp(currentUser);
   stage.mids.forEach(mid=>{
@@ -3464,25 +3461,7 @@ function setCmpFilt(f,btn){
   renderCompare();
 }
 
-let _fastActualSyncTs = 0;
-function maybeFastSyncActuals() {
-  const now = Date.now();
-  if(now - _fastActualSyncTs < 45000) return;
-  const activeOrRecentlyFinished = ALL.some(m => {
-    const ko = new Date(m[8]).getTime();
-    return now >= ko - 10 * 60000 && now <= ko + 180 * 60000;
-  });
-  const missingFinished = ALL.some(m => {
-    const finishEst = new Date(m[8]).getTime() + 115 * 60000;
-    return finishEst <= now && !la()[m[0]];
-  });
-  if(!activeOrRecentlyFinished && !missingFinished) return;
-  _fastActualSyncTs = now;
-  fetchAllResults().then(r => { if(r) syncResultToFirebase(r); }).catch(()=>{});
-}
-
 function renderCompare(){
-  maybeFastSyncActuals();
   // Use active leaderboard group's players, or all if "All Players"
   const allGroups = getAllLbGroups();
   const activeGrp = allGroups.find(g=>g.id===activeLbGroup)||allGroups[0];
@@ -3497,13 +3476,15 @@ function renderCompare(){
   c.innerHTML='';
 
   const n = cmpUsers.length;
-  c.style.setProperty('--user-count', n);
 
   // Inject dynamic grid CSS
   const sid='cmp-grid-style';
   let sel=document.getElementById(sid);
   if(!sel){sel=document.createElement('style');sel.id=sid;document.head.appendChild(sel);}
   sel.textContent=`.cmp-hd-row,.cmp-data-row{grid-template-columns:160px repeat(${n},minmax(140px,1fr)) 110px;}`;
+
+  const stageLockedMap={};
+  STAGES.forEach(s=>{stageLockedMap[s.key]=isLocked(s.key);});
 
   Object.entries(byDate).forEach(([date,ms])=>{
     const label=new Date(date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long'});
@@ -3520,10 +3501,10 @@ function renderCompare(){
     ms.forEach(m=>{
       const [mid,,,,home,away]=m;
       const stageKey=m[1];
-      const matchDeadlinePassed=isPredictionLockedForMatch(mid);
+      const stageLocked=stageLockedMap[stageKey]||false;
       const act=actuals[mid];
       const matchPlayed=!!(act&&act.hg!==undefined);
-      const visible=matchDeadlinePassed||matchPlayed; // reveal per match/day, not the whole GW at once
+      const visible=stageLocked||matchPlayed||isMatchLocked(mid); // reveal at individual match kickoff
 
       const isAuto=act&&act.source&&act.source!=='manual';
       const row=document.createElement('div');
@@ -3593,7 +3574,6 @@ function saveActual(mid, val, isAuto=false) {
   actuals[mid]={hg, ag, source:isAuto?'api':'manual', ts:Date.now()};
   sa(actuals);
   updateHeroStats();
-  if(document.getElementById('compare')?.classList.contains('act')) renderCompare();
   renderDashboard();
   // Refresh real standings if that tab is open
   if(document.getElementById('bracket-real')?.classList.contains('act') &&
@@ -3795,42 +3775,6 @@ try {
 #music-info{max-width:150px}
 #music-label{font-size:11px;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #music-sub{font-size:9px;color:var(--grey);margin-top:2px}
-
-
-/* ── MOBILE POLISH ─────────────────────────────────────────────── */
-@media(max-width:720px){
-  body{font-size:13px}
-  nav{height:auto;min-height:48px;padding:6px 8px;gap:4px;position:sticky;top:0}
-  .logo{font-size:18px;margin-right:6px;letter-spacing:2px}
-  .nav-btn{font-size:11px;padding:7px 9px}
-  #user-pill{padding:5px 9px;font-size:11px}
-  .hero{padding:24px 12px 18px}
-  .hero-title{font-size:clamp(36px,12vw,54px)}
-  .hero-stats{gap:12px;margin-top:16px}
-  .hstat-val{font-size:27px}
-  .hstat-lbl{font-size:8px;letter-spacing:1px}
-  .sec{padding:14px 10px 48px}
-  .dash-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-  .dcard{padding:8px 10px}
-  .dcard-val{font-size:24px}
-  .dl-banner{padding:10px 12px;align-items:flex-start}
-  .dl-clock{width:100%;justify-content:space-between;gap:5px}
-  .dl-unit{min-width:0;flex:1;padding:5px 4px}
-  .dl-num{font-size:22px}
-  .stage-tabs,.toolbar,.lb-tabs{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
-  .stab,.fbtn,.lb-tab{flex-shrink:0}
-  .mcard{grid-template-columns:1fr 86px 1fr;margin-bottom:7px}
-  .tside{padding:8px 7px;min-width:0}
-  .tname{font-size:12px;white-space:normal;line-height:1.15}
-  .sc-center{padding:6px 5px}
-  .sc-in{width:30px;height:30px;font-size:14px}
-  .grp-grid{grid-template-columns:1fr}
-  .cmp-hd-row,.cmp-data-row{grid-template-columns:118px repeat(var(--user-count,3),minmax(96px,1fr)) 86px!important}
-  .cmp-hd-cell,.cmp-cell{padding:7px 6px;font-size:11px}
-  .actual-in{width:48px;font-size:12px}
-  .modal,.adduser-modal,.grp-modal,.pin-modal{width:94vw;padding:22px 18px}
-}
-
 </style>
 
 <div id="music-widget">
