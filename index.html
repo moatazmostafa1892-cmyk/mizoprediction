@@ -347,6 +347,50 @@ table.tt tr:last-child td{border-bottom:none}
 #confetti-canvas{position:fixed;inset:0;z-index:901;pointer-events:none;display:none}
 #confetti-canvas.show{display:block}
 
+
+/* ── LEADERBOARD TABS ─────────────────────────────────────────────── */
+.lb-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.lb-tab{background:var(--card);border:1px solid var(--border);color:var(--grey);
+  padding:6px 14px;border-radius:8px;cursor:pointer;font:600 12px 'Inter',sans-serif;
+  transition:.15s;white-space:nowrap;position:relative}
+.lb-tab:hover{color:var(--white);border-color:var(--gold)}
+.lb-tab.act{background:var(--gold);color:#000;border-color:var(--gold)}
+.lb-tab-add{background:none;border:1px dashed var(--border);color:var(--grey);
+  width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;
+  display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0}
+.lb-tab-add:hover{border-color:var(--gold);color:var(--gold)}
+.lb-tab .del-tab{position:absolute;top:-6px;right:-6px;width:16px;height:16px;
+  border-radius:50%;background:var(--red);color:#fff;font-size:10px;font-weight:700;
+  display:none;align-items:center;justify-content:center;cursor:pointer;line-height:1}
+.lb-tab:hover .del-tab{display:flex}
+
+/* ── CREATE GROUP MODAL ───────────────────────────────────────────── */
+#grp-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);
+  z-index:600;align-items:center;justify-content:center}
+#grp-modal-overlay.show{display:flex}
+.grp-modal{background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:28px 32px;width:400px;max-width:92vw}
+.grp-modal h2{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);margin-bottom:16px}
+.grp-modal-field{width:100%;background:var(--card2);border:1px solid var(--border);
+  color:var(--white);padding:10px 14px;border-radius:8px;font:500 14px 'Inter',sans-serif;
+  outline:none;margin-bottom:14px}
+.grp-modal-field:focus{border-color:var(--gold)}
+.grp-player-list{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;
+  max-height:220px;overflow-y:auto}
+.grp-player-item{display:flex;align-items:center;gap:10px;padding:8px 12px;
+  background:var(--card2);border:1px solid var(--border);border-radius:7px;cursor:pointer;transition:.15s}
+.grp-player-item:hover{border-color:var(--gold)}
+.grp-player-item.sel{border-color:var(--green);background:rgba(34,197,94,.08)}
+.grp-player-check{width:18px;height:18px;border-radius:4px;border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.grp-player-item.sel .grp-player-check{background:var(--green);border-color:var(--green);color:#fff}
+.grp-modal-btns{display:flex;gap:8px}
+.grp-modal-ok{flex:1;padding:10px;background:var(--gold);color:#000;border:none;
+  border-radius:8px;font:700 14px 'Inter',sans-serif;cursor:pointer}
+.grp-modal-ok:hover{background:var(--gold2)}
+.grp-modal-cancel{padding:10px 16px;background:var(--card2);color:var(--grey);
+  border:1px solid var(--border);border-radius:8px;font:500 14px 'Inter',sans-serif;cursor:pointer}
+
 </style>
 </head>
 <body>
@@ -456,16 +500,38 @@ table.tt tr:last-child td{border-bottom:none}
 
 <div class="toast" id="toast"></div>
 
+
+<!-- ── LEADERBOARD GROUP MODAL ──────────────────────────────────── -->
+<div id="grp-modal-overlay">
+  <div class="grp-modal">
+    <h2 id="grp-modal-title">Create Leaderboard Group</h2>
+    <input class="grp-modal-field" id="grp-modal-name" placeholder="Group name (e.g. Friends, Office...)" maxlength="24">
+    <div style="font-size:11px;color:var(--grey);margin-bottom:8px">Select players to include:</div>
+    <div class="grp-player-list" id="grp-player-list"></div>
+    <div class="grp-modal-btns">
+      <button class="grp-modal-cancel" onclick="closeGrpModal()">Cancel</button>
+      <button class="grp-modal-ok" onclick="saveGrpModal()">Create Group</button>
+    </div>
+  </div>
+</div>
+
 <!-- DASHBOARD -->
 <div id="dashboard" class="sec act">
   <div class="sec-title">Dashboard</div>
   <div class="dash-grid" id="dash-stats"></div>
+
+  <!-- Leaderboard tabs -->
+  <div class="lb-tabs" id="lb-tabs"></div>
+
   <div class="lb-wrap">
-    <div class="lb-head"><h3>🏆 Leaderboard</h3>
-      <span style="font-size:11px;color:var(--grey)">2pts correct result · +1 exact score · auto-updates from live data</span></div>
+    <div class="lb-head">
+      <h3>🏆 <span id="lb-tab-title">All Players</span></h3>
+      <span style="font-size:11px;color:var(--grey)">2pts correct result · +1 exact score</span>
+    </div>
     <div class="lb-row hd"><div></div><div>Player</div><div style="text-align:right">Preds</div><div style="text-align:right">✓</div><div style="text-align:right">🎯</div><div style="text-align:right">Pts</div><div style="text-align:right">%</div></div>
     <div id="lb-rows"></div>
   </div>
+
   <div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--gold);margin-bottom:10px">📅 Stage Deadlines</div>
     <div id="all-dl" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:9px"></div>
@@ -944,6 +1010,9 @@ async function bootstrapData() {
     // Seed Moataz if empty
     if(!Object.keys(lp('Moataz')).length) sp('Moataz', MOATAZ);
 
+    // Repair: push any locally-known custom users missing from Firebase
+    await repairCustomUsers();
+
     // Fetch results for any matches already finished (on every page load)
     fetchAllResults().then(results => syncResultToFirebase(results));
 
@@ -976,6 +1045,28 @@ async function syncCustomUsersFromFirebase() {
   if(changed) setLocalCustomUsers(merged);
   syncUserGlobals();
   rebuildUserModalList();
+}
+
+// Repair: push any local custom users missing from Firebase
+async function repairCustomUsers() {
+  if(!FB_READY) return;
+  const localCustom = getLocalCustomUsers();
+  if(!localCustom.length) return;
+  try {
+    const existingFB = await fbGet('custom_users');
+    const fbObj = {};
+    if(existingFB && typeof existingFB === 'object') {
+      Object.values(existingFB).filter(Boolean).forEach(u => { if(u.name) fbObj[u.name] = u; });
+    }
+    let needsUpdate = false;
+    localCustom.forEach(u => {
+      if(u.name && !fbObj[u.name]) {
+        fbObj[u.name] = u;
+        needsUpdate = true;
+      }
+    });
+    if(needsUpdate) await fbSet('custom_users', fbObj);
+  } catch(e) {}
 }
 
 // ── Firebase Real-time Listener (SSE) — instant push, no polling ─────
@@ -1756,51 +1847,145 @@ function updateHeroStats() {
 // ═══════════════════════════════════════════════════════════════════
 // ── DASHBOARD ───────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
-function renderDashboard() {
-  updateHeroStats();
-  // Sync banner
-  // Player cards
+// ═══════════════════════════════════════════════════════════════════
+// ── LEADERBOARD GROUPS ──────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+const LB_GROUPS_KEY = 'wc2026_lb_groups';
+
+function loadLbGroups() {
+  try { return JSON.parse(localStorage.getItem(LB_GROUPS_KEY)||'null'); } catch { return null; }
+}
+function saveLbGroups(groups) {
+  localStorage.setItem(LB_GROUPS_KEY, JSON.stringify(groups));
+  fbSet('lb_groups', groups);
+}
+function getAllLbGroups() {
+  const saved = loadLbGroups();
+  const defaults = [
+    {id:'all',  name:'All Players', players:null,  builtin:true},
+    {id:'main', name:'Khairo · Moataz · Steve', players:['Khairo','Moataz','Steve'], builtin:true},
+  ];
+  if(!saved) return defaults;
+  return [...defaults, ...saved.filter(g=>!g.builtin)];
+}
+
+let activeLbGroup = 'all';
+
+function renderLbTabs() {
+  const groups = getAllLbGroups();
+  const tabs = document.getElementById('lb-tabs');
+  if(!tabs) return;
+  tabs.innerHTML = '';
+  groups.forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'lb-tab' + (g.id===activeLbGroup?' act':'');
+    btn.innerHTML = g.name + (!g.builtin?`<span class="del-tab" onclick="event.stopPropagation();deleteLbGroup('${g.id}')">×</span>`:'');
+    btn.onclick = () => { activeLbGroup=g.id; renderLbTabs(); renderLeaderboard(); };
+    tabs.appendChild(btn);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'lb-tab-add'; addBtn.title='Create new group'; addBtn.textContent='+';
+  addBtn.onclick = () => openGrpModal();
+  tabs.appendChild(addBtn);
+}
+
+function renderLeaderboard() {
+  const groups = getAllLbGroups();
+  const active = groups.find(g=>g.id===activeLbGroup)||groups[0];
+  const titleEl = document.getElementById('lb-tab-title');
+  if(titleEl) titleEl.textContent = active.name;
+  const players = active.players ? active.players.filter(p=>USERS.includes(p)) : [...USERS];
+
   const sg = document.getElementById('dash-stats');
   sg.innerHTML = '';
-  USERS.forEach(u => {
+  players.forEach(u => {
     const sc = score(u);
     sg.innerHTML += `<div class="dcard">
-      <div class="dcard-lbl" style="color:${COLORS[u]}">${u}</div>
+      <div class="dcard-lbl" style="color:${COLORS[u]||'var(--grey)'}">${u}</div>
       <div class="dcard-val">${sc.pts}</div>
       <div class="dcard-sub">${sc.n}/104 predictions · ${sc.correct} correct · ${sc.exact} exact</div>
     </div>`;
   });
 
-  // Leaderboard
   const lb = document.getElementById('lb-rows');
   lb.innerHTML = '';
-  USERS.map(u=>({u,...score(u)})).sort((a,b)=>b.pts-a.pts||b.correct-a.correct).forEach((s,i) => {
+  players.map(u=>({u,...score(u)})).sort((a,b)=>b.pts-a.pts||b.correct-a.correct).forEach((s,i) => {
     lb.innerHTML += `<div class="lb-row">
       <div class="lb-rank ${['r1','r2','r3'][i]||''}">${i+1}</div>
-      <div style="font-weight:600;color:${COLORS[s.u]}">${s.u}</div>
+      <div style="font-weight:600;color:${COLORS[s.u]||'var(--grey)'}">${s.u}</div>
       <div class="lb-n">${s.n}</div><div class="lb-n">${s.correct}</div>
       <div class="lb-n">${s.exact}</div><div class="lb-pts">${s.pts}</div>
       <div class="lb-n">${s.pct}%</div>
     </div>`;
   });
+}
 
-  // Deadline cards
-  const dlDiv = document.getElementById('all-dl');
-  dlDiv.innerHTML = '';
-  const active = getActiveStage();
-  STAGES.forEach(s => {
-    const tl = timeLeft(s.deadline);
-    const isCurr = active?.key === s.key;
+function deleteLbGroup(id) {
+  const saved = (loadLbGroups()||[]).filter(g=>!g.builtin&&g.id!==id);
+  saveLbGroups(saved);
+  if(activeLbGroup===id) activeLbGroup='all';
+  renderLbTabs(); renderLeaderboard();
+  showToast('Group deleted');
+}
+
+let _grpSel = new Set();
+function openGrpModal() {
+  _grpSel = new Set(USERS);
+  document.getElementById('grp-modal-name').value='';
+  document.getElementById('grp-modal-name').style.borderColor='';
+  buildGrpPlayerList();
+  document.getElementById('grp-modal-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('grp-modal-name').focus(),100);
+}
+function closeGrpModal() { document.getElementById('grp-modal-overlay').classList.remove('show'); }
+function buildGrpPlayerList() {
+  const list = document.getElementById('grp-player-list');
+  list.innerHTML='';
+  getAllUsers().forEach(u=>{
+    const sel=_grpSel.has(u.name);
+    const item=document.createElement('div');
+    item.className='grp-player-item'+(sel?' sel':'');
+    item.innerHTML=`<div class="grp-player-check">${sel?'✓':''}</div>
+      <div style="width:24px;height:24px;border-radius:50%;background:${u.color}20;color:${u.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${u.name.charAt(0)}</div>
+      <div style="font-weight:600;font-size:13px">${u.name}</div>
+      <div style="font-size:11px;color:var(--grey);margin-left:auto">${score(u.name).pts} pts</div>`;
+    item.onclick=()=>{ if(_grpSel.has(u.name))_grpSel.delete(u.name); else _grpSel.add(u.name); buildGrpPlayerList(); };
+    list.appendChild(item);
+  });
+}
+function saveGrpModal() {
+  const name=document.getElementById('grp-modal-name').value.trim();
+  if(!name){document.getElementById('grp-modal-name').style.borderColor='var(--red)';return;}
+  if(_grpSel.size<1){showToast('Select at least 1 player');return;}
+  const newGrp={id:'custom_'+Date.now(),name,players:[..._grpSel],builtin:false};
+  const existing=(loadLbGroups()||[]).filter(g=>!g.builtin);
+  existing.push(newGrp);
+  saveLbGroups(existing);
+  closeGrpModal();
+  activeLbGroup=newGrp.id;
+  renderLbTabs(); renderLeaderboard();
+  showToast(`✅ "${name}" group created!`);
+}
+
+function renderDashboard() {
+  updateHeroStats();
+  renderLbTabs();
+  renderLeaderboard();
+  const dlDiv=document.getElementById('all-dl');
+  dlDiv.innerHTML='';
+  const active=getActiveStage();
+  STAGES.forEach(s=>{
+    const tl=timeLeft(s.deadline);
+    const isCurr=active?.key===s.key;
     let bg='rgba(107,138,118,.07)',bc='var(--border)',badge='';
-    if(!tl) { bg='rgba(239,68,68,.04)'; bc='rgba(239,68,68,.2)'; badge='<span class="dl-badge dl-locked" style="font-size:10px">🔒 Locked</span>'; }
-    else if(isCurr) { bg='rgba(34,197,94,.04)'; bc='rgba(34,197,94,.28)';
-      badge=`<span class="dl-badge dl-open" style="font-size:10px">✅ ${tl.d}d ${tl.h}h left</span>`; }
-    else { badge=`<span style="font-size:10px;color:var(--grey)">Opens after ${STAGES[STAGES.indexOf(s)-1]?.label||'previous'}</span>`; }
-    dlDiv.innerHTML += `<div style="background:${bg};border:1px solid ${bc};border-radius:8px;padding:10px 13px">
+    if(!tl){bg='rgba(239,68,68,.04)';bc='rgba(239,68,68,.2)';badge='<span class="dl-badge dl-locked" style="font-size:10px">🔒 Locked</span>';}
+    else if(isCurr){bg='rgba(34,197,94,.04)';bc='rgba(34,197,94,.28)';
+      badge=`<span class="dl-badge dl-open" style="font-size:10px">✅ ${tl.d}d ${tl.h}h left</span>`;}
+    else{badge=`<span style="font-size:10px;color:var(--grey)">Opens after ${STAGES[STAGES.indexOf(s)-1]?.label||'previous'}</span>`;}
+    dlDiv.innerHTML+=`<div style="background:${bg};border:1px solid ${bc};border-radius:8px;padding:10px 13px">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);letter-spacing:1px">${s.label}</div>
       <div style="font-size:10px;color:var(--grey);margin-bottom:5px">${new Date(s.deadline).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'UTC'})} UTC</div>
-      ${badge}
-    </div>`;
+      ${badge}</div>`;
   });
 }
 
@@ -3200,7 +3385,7 @@ try {
           if(e.data===YT.PlayerState.PLAYING){
             playing=true;
             document.getElementById('music-toggle').textContent='⏸';
-            // Restart clip timer every time PLAYING fires
+            // Only start the clip timer here — ONE place, no backup timers
             clearTimeout(clipTimer);
             clipTimer=setTimeout(function(){ nextSong(); }, CLIP*1000);
           }
@@ -3216,27 +3401,14 @@ try {
     });
   };
 
-  function playSong(index){
-    si = (index + SONGS.length) % SONGS.length;
-    updateLabel();
-    clearTimeout(clipTimer);
-    if(!player) return;
-    // cueVideoById then play — more reliable than loadVideoById alone
-    player.cueVideoById(SONGS[si].id);
-    setTimeout(function(){
-      if(player && player.playVideo) player.playVideo();
-      // Backup timer: if onStateChange:PLAYING never fires within 5s, force next
-      clipTimer = setTimeout(function(){
-        if(playing) return; // PLAYING fired, the real timer is running
-        nextSong(); // something went wrong, skip
-      }, 5000);
-    }, 300);
-  }
-
   function nextSong(){
     clearTimeout(clipTimer);
     playing=false;
-    playSong(si + 1);
+    si=(si+1)%SONGS.length;
+    updateLabel();
+    if(!player) return;
+    // loadVideoById auto-plays if already playing; use it directly
+    player.loadVideoById(SONGS[si].id);
   }
 
   function updateLabel(){
@@ -3249,12 +3421,7 @@ try {
     if(playing){
       player.pauseVideo();
     } else {
-      if(player.getPlayerState()===YT.PlayerState.PAUSED ||
-         player.getPlayerState()===YT.PlayerState.CUED){
-        player.playVideo();
-      } else {
-        playSong(si); // reload and play current song
-      }
+      player.playVideo();
     }
   };
 })();
