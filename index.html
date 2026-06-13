@@ -4091,6 +4091,8 @@ try {
     <div id="music-label">🎵 WC 2026 Anthems</div>
     <div id="music-sub">Press ▶ to play</div>
   </div>
+  <button onclick="musicNext()" title="Next song"
+    style="background:none;border:none;color:var(--grey);font-size:14px;cursor:pointer;padding:2px 4px;flex-shrink:0">⏭</button>
 </div>
 
 <!-- YT API needs a div — it replaces it with an iframe itself -->
@@ -4103,6 +4105,8 @@ try {
   var SONGS = [
     {id:"HaaqDQSmxNI", title:"Dai Dai", artist:"Shakira & Burna Boy"},
     {id:"ZF-hKFBWcJk", title:"Waving Flag", artist:"K'naan"},
+    {id:"WTJSt4wP2ME", title:"La La La", artist:"Shakira"},
+    {id:"pRpeEdMmmQ0", title:"Hips Don't Lie", artist:"Shakira"},
   ];
   var si=0, playing=false, player=null, apiReady=false, progressTimer=null;
 
@@ -4172,6 +4176,11 @@ try {
   function stopProgress(){
     if(progressTimer){clearInterval(progressTimer);progressTimer=null;}
   }
+
+  window.musicNext=function(){
+    if(!apiReady||!player) return;
+    nextSong();
+  };
 
   window.musicToggle=function(){
     if(!apiReady||!player){
