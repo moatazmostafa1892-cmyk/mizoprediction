@@ -1473,21 +1473,19 @@ function applySnapshot(all) {
   return snapBefore !== snapAfter;
 }
 
-// Call debugApiResults() in browser console (F12) to diagnose missing results
+// Call debugApiResults() in browser console (F12) to diagnose
 async function debugApiResults() {
-  console.log('Fetching worldcup26.ir...');
+  console.log('Calling Netlify sync function...');
   try {
-    const text = await fetchWithProxy('https://worldcup26.ir/get/games');
-    const data = JSON.parse(text);
-    const finished = (data.games||[]).filter(g=>String(g.finished).toUpperCase()==='TRUE');
-    console.log('Finished games from API:', finished.length);
-    finished.forEach(g=>{
-      const h=String(g.home_team_name_en||g.home_team||g.home||'').trim();
-      const a=String(g.away_team_name_en||g.away_team||g.away||'').trim();
-      const found=ALL.find(m=>teamsMatch(h,m[4])&&teamsMatch(a,m[5]))||ALL.find(m=>teamsMatch(h,m[5])&&teamsMatch(a,m[4]));
-      console.log(`id:${g.id} | ${h} ${g.home_score}-${g.away_score} ${a} → ${found?found[0]:'❌ NO MATCH'}`);
-    });
-  } catch(e){console.error('API error:',e);}
+    const r = await fetch('/.netlify/functions/sync-results');
+    const data = await r.json();
+    console.log('Result:', data);
+    if(data.updates) {
+      Object.entries(data.updates).forEach(([mid, res]) => {
+        console.log(`✅ ${mid}: ${res.hg}-${res.ag}`);
+      });
+    }
+  } catch(e) { console.error('Error:', e); }
 }
 
 function refreshUI() {
@@ -1686,18 +1684,21 @@ function normalizeApiResultsToActuals(payload, source='api'){
 }
 
 async function fetchAllResults() {
-  // Try worldcup26.ir first — returns finished:TRUE for completed matches
+  // Call our own Netlify serverless function — no CORS issues, uses football-data.org
   try {
-    const r = await fetchResultsFromSource('https://worldcup26.ir/get/games', parseWorldcup26);
-    if(r && Object.keys(r).length > 0) return r;
+    const r = await fetch('/.netlify/functions/sync-results', {
+      cache: 'no-cache',
+      signal: AbortSignal.timeout(15000)
+    });
+    if(r.ok) {
+      const data = await r.json();
+      // The function writes directly to Firebase and returns what changed
+      // Also apply the updates locally immediately
+      if(data.updates && Object.keys(data.updates).length > 0) {
+        return data.updates;
+      }
+    }
   } catch(e) {}
-
-  // Fallback: wc2026api.com
-  try {
-    const r = await fetchResultsFromSource('https://api.wc2026api.com/matches', parseWC2026Api);
-    if(r && Object.keys(r).length > 0) return r;
-  } catch(e) {}
-
   return {};
 }
 
