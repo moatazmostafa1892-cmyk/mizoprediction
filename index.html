@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>⚽ WC 2026 Predictions</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -937,26 +938,7 @@ function seedKnownResults() {
 // On load: clear any non-manual actuals that have old locked/confirmed-final flags
 // These were wrongly set by previous code versions and block API updates
 async function clearBadGuessedResults() {
-  try {
-    const fbActuals = await fbGet('actuals') || {};
-    const toDelete = [];
-    Object.entries(fbActuals).forEach(([mid, stored]) => {
-      if(!stored) return;
-      // If it was stored by old code (has lockedAt or confirmed-final source)
-      // AND it wasn't manually entered — delete it so API can write fresh
-      const isOldFormat = stored.lockedAt || stored.source === 'confirmed-final' || stored.source === 'auto-final';
-      if(isOldFormat && stored.source !== 'manual') {
-        toDelete.push(mid);
-      }
-    });
-    for(const mid of toDelete) {
-      await fbSet(`actuals/${mid}`, null);
-      const actuals = Object.assign({}, la());
-      delete actuals[mid];
-      _cache['actuals'] = actuals;
-      console.log(`Cleared old-format result for ${mid}`);
-    }
-  } catch(e) {}
+  // No-op — lock logic is fixed, no cleanup needed anymore
 }
 
 const STAGES = [
@@ -1684,21 +1666,19 @@ function normalizeApiResultsToActuals(payload, source='api'){
 }
 
 async function fetchAllResults() {
-  // Call our own Netlify serverless function — no CORS issues, uses football-data.org
+  // Call our Netlify serverless function — server-side, no CORS issues
   try {
     const r = await fetch('/.netlify/functions/sync-results', {
       cache: 'no-cache',
-      signal: AbortSignal.timeout(15000)
+      signal: AbortSignal.timeout(20000)
     });
-    if(r.ok) {
-      const data = await r.json();
-      // The function writes directly to Firebase and returns what changed
-      // Also apply the updates locally immediately
-      if(data.updates && Object.keys(data.updates).length > 0) {
-        return data.updates;
-      }
+    const data = await r.json();
+    if(data && data.ok && data.updates && Object.keys(data.updates).length > 0) {
+      return data.updates;
     }
-  } catch(e) {}
+  } catch(e) {
+    // Function unavailable (e.g. local dev) — silently ignore
+  }
   return {};
 }
 
@@ -4203,6 +4183,23 @@ try {
         onReady:function(e){
           e.target.setVolume(35);
           updateLabel();
+          // Auto-play on load — browsers allow this after any user interaction
+          // We attach a one-time click listener to the whole page
+          var played = false;
+          function tryPlay(){
+            if(played) return;
+            played = true;
+            try { e.target.playVideo(); } catch(err){}
+            document.removeEventListener('click', tryPlay);
+            document.removeEventListener('keydown', tryPlay);
+            document.removeEventListener('touchstart', tryPlay);
+          }
+          // Try immediately (works if page was already interacted with)
+          try { e.target.playVideo(); } catch(err){}
+          // Also try on first user interaction (for fresh page loads)
+          document.addEventListener('click', tryPlay);
+          document.addEventListener('keydown', tryPlay);
+          document.addEventListener('touchstart', tryPlay);
         },
         onStateChange:function(e){
           if(e.data===YT.PlayerState.PLAYING){
