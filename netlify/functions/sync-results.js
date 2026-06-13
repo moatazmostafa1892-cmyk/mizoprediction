@@ -1,5 +1,7 @@
-// Netlify Function — runs every 5 min via schedule + can be called on-demand
-// Uses football-data.org API (server-side, no CORS issues)
+// Netlify Function — syncs match results from football-data.org to Firebase
+// Runs every 5 min (scheduled) AND on-demand when frontend calls it
+
+const https = require('https');
 
 const FOOTBALL_DATA_KEY = "5285a7be898d4a4d9c6b262da48366ec";
 const FIREBASE_URL = "https://wc-predictions-36203-default-rtdb.firebaseio.com";
@@ -7,9 +9,9 @@ const FIREBASE_URL = "https://wc-predictions-36203-default-rtdb.firebaseio.com";
 const TEAM_NORM = {
   "Korea Republic":"South Korea","Czechia":"Czech Republic",
   "Côte d'Ivoire":"Ivory Coast","Cote d'Ivoire":"Ivory Coast",
-  "Bosnia & Herzegovina":"Bosnia and Herzegovina",
-  "Congo DR":"DR Congo","Democratic Republic of Congo":"DR Congo",
-  "Cabo Verde":"Cape Verde","USA":"United States",
+  "Bosnia & Herzegovina":"Bosnia and Herzegovina","Bosnia-Herzegovina":"Bosnia and Herzegovina",
+  "Congo DR":"DR Congo","Democratic Republic of Congo":"DR Congo","DRC":"DR Congo",
+  "Cabo Verde":"Cape Verde","USA":"United States","United States of America":"United States",
   "Curaçao":"Curaçao","Curacao":"Curaçao",
 };
 function norm(t){ return TEAM_NORM[String(t||'').trim()] || String(t||'').trim(); }
@@ -43,7 +45,7 @@ const LOOKUP = {
   "Jordan|Argentina":"M070","Colombia|Portugal":"M071","DR Congo|Uzbekistan":"M072",
 };
 
-// Also build reverse lookup (away|home → mid) for APIs that swap teams
+// Build reverse lookup for swapped home/away
 const LOOKUP_REV = {};
 Object.entries(LOOKUP).forEach(([k,v]) => {
   const [h,a] = k.split('|');
@@ -55,6 +57,51 @@ function findMid(home, away) {
   return LOOKUP[`${h}|${a}`] || LOOKUP_REV[`${h}|${a}`] || null;
 }
 
+// Simple HTTPS request helper (no fetch needed)
+function httpsGet(url, headers={}) {
+  return new Promise((resolve, reject) => {
+    const opts = new URL(url);
+    const req = https.request({
+      hostname: opts.hostname,
+      path: opts.pathname + opts.search,
+      method: 'GET',
+      headers: { 'User-Agent': 'WC2026-Predictions/1.0', ...headers }
+    }, res => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve({ status: res.statusCode, body: data }));
+    });
+    req.on('error', reject);
+    req.setTimeout(10000, () => { req.destroy(); reject(new Error('Timeout')); });
+    req.end();
+  });
+}
+
+function httpsPut(url, body) {
+  return new Promise((resolve, reject) => {
+    const opts = new URL(url);
+    const data = JSON.stringify(body);
+    const req = https.request({
+      hostname: opts.hostname,
+      path: opts.pathname + opts.search,
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data),
+        'User-Agent': 'WC2026-Predictions/1.0'
+      }
+    }, res => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => resolve({ status: res.statusCode, body: d }));
+    });
+    req.on('error', reject);
+    req.setTimeout(10000, () => { req.destroy(); reject(new Error('Timeout')); });
+    req.write(data);
+    req.end();
+  });
+}
+
 exports.handler = async function(event, context) {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -62,52 +109,54 @@ exports.handler = async function(event, context) {
   };
 
   try {
-    // Fetch finished matches from football-data.org
-    const r = await fetch(
+    // 1. Fetch finished matches from football-data.org
+    const apiRes = await httpsGet(
       "https://api.football-data.org/v4/competitions/2000/matches?status=FINISHED",
-      { headers: { "X-Auth-Token": FOOTBALL_DATA_KEY } }
+      { "X-Auth-Token": FOOTBALL_DATA_KEY }
     );
-    if(!r.ok) throw new Error("football-data API error: " + r.status);
-    const { matches = [] } = await r.json();
 
-    // Get existing actuals from Firebase
-    const fbr = await fetch(`${FIREBASE_URL}/actuals.json`);
-    const existing = (await fbr.json()) || {};
+    if(apiRes.status !== 200) {
+      throw new Error(`football-data API returned ${apiRes.status}: ${apiRes.body.slice(0,200)}`);
+    }
 
-    let changed = 0;
+    const { matches = [] } = JSON.parse(apiRes.body);
+
+    // 2. Get existing actuals from Firebase
+    const fbRes = await httpsGet(`${FIREBASE_URL}/actuals.json`);
+    const existing = JSON.parse(fbRes.body) || {};
+
+    // 3. Find changed results
     const updates = {};
+    const unmatched = [];
 
     matches.forEach(m => {
       const home = norm(m.homeTeam?.name || m.homeTeam?.shortName || "");
       const away = norm(m.awayTeam?.name || m.awayTeam?.shortName || "");
       const mid = findMid(home, away);
+
       if(!mid) {
-        console.log(`No match found for: ${home} vs ${away}`);
+        unmatched.push(`${home} vs ${away}`);
         return;
       }
+
       const hg = m.score?.fullTime?.home;
       const ag = m.score?.fullTime?.away;
       if(hg == null || ag == null) return;
 
       const ex = existing[mid];
-      // Only update if score changed or not yet stored, and wasn't manually entered
       if(!ex || ex.source !== 'manual') {
         if(!ex || ex.hg !== hg || ex.ag !== ag) {
           updates[mid] = { hg, ag, source: 'football-data', ts: Date.now() };
-          changed++;
         }
       }
     });
 
-    // Write each result individually — never overwrite the whole actuals object
+    // 4. Write each result individually to Firebase
+    const changed = Object.keys(updates).length;
     if(changed > 0) {
       await Promise.all(
         Object.entries(updates).map(([mid, result]) =>
-          fetch(`${FIREBASE_URL}/actuals/${mid}.json`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(result)
-          })
+          httpsPut(`${FIREBASE_URL}/actuals/${mid}.json`, result)
         )
       );
     }
@@ -115,11 +164,15 @@ exports.handler = async function(event, context) {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ ok: true, changed, total: matches.length, updates })
+      body: JSON.stringify({ ok: true, changed, total: matches.length, updates, unmatched })
     };
 
   } catch(e) {
-    console.error('sync-results error:', e);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };
+    console.error('sync-results error:', e.message);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: e.message })
+    };
   }
 };
