@@ -2498,10 +2498,15 @@ let _editingGrpId = null; // null = new group, string = editing existing
 
 // ── Tab visibility: only show tab to logged-in user if they are in that group
 function visibleGroupsForCurrentUser() {
-  // All logged-in users see all groups — the leaderboard filters correctly per group
-  // No need to hide tabs since data isn't sensitive
   if(!currentUser) return getAllLbGroups().filter(g => g.id === 'all');
-  return getAllLbGroups();
+  // Only show groups the current user is a member of, plus "All Players"
+  // Admins see all groups
+  if(isAdmin(currentUser)) return getAllLbGroups();
+  return getAllLbGroups().filter(g =>
+    g.id === 'all' ||                          // everyone sees All Players
+    !g.players ||                              // groups with no player list = open
+    g.players.includes(currentUser)            // user is in this group
+  );
 }
 
 function renderLbTabs() {
