@@ -914,13 +914,9 @@ const ALL = [...GM, ...KO];
 // These ensure results appear even if API sync fails
 const KNOWN_RESULTS = {
   M001: {hg:2, ag:0, source:'confirmed-final', locked:true, final:true, status:'FT', ts:1749679200000, lockedAt:'2026-06-11T22:00:00.000Z'}, // Mexico 2-0 South Africa
-  M002: {hg:3, ag:1, source:'confirmed-final', locked:true, final:true, status:'FT', ts:1749690000000, lockedAt:'2026-06-12T01:00:00.000Z'}, // South Korea 3-1 Czech Republic
-  M003: {hg:0, ag:2, source:'confirmed-final', locked:true, final:true, status:'FT', ts:1749765600000, lockedAt:'2026-06-12T22:00:00.000Z'}, // Canada 0-2 Bosnia
-  M004: {hg:3, ag:1, source:'confirmed-final', locked:true, final:true, status:'FT', ts:1749776400000, lockedAt:'2026-06-13T01:00:00.000Z'}, // USA 3-1 Paraguay
 };
-
-// seedKnownResults pushes these to Firebase if not already there
-// They use locked:true so they can never be wiped by a stale API response
+// All other results come from the live API (worldcup26.ir / wc2026api.com)
+// Never hardcode scores here — use the API to get accurate results
 
 function seedKnownResults() {
   Object.entries(KNOWN_RESULTS).forEach(([mid, res]) => {
@@ -1584,23 +1580,19 @@ function normalizeApiResultsToActuals(payload, source='api'){
 }
 
 async function fetchAllResults() {
-  const endpoints = [];
-  let merged = {};
+  // Try worldcup26.ir first — returns finished:TRUE for completed matches
+  try {
+    const r = await fetchResultsFromSource('https://worldcup26.ir/get/games', parseWorldcup26);
+    if(r && Object.keys(r).length > 0) return r;
+  } catch(e) {}
 
-  for(const url of endpoints) {
-    try {
-      const res = await fetch(url, {cache:'no-store'});
-      if(!res.ok) continue;
-      const data = await res.json();
+  // Fallback: wc2026api.com
+  try {
+    const r = await fetchResultsFromSource('https://api.wc2026api.com/matches', parseWC2026Api);
+    if(r && Object.keys(r).length > 0) return r;
+  } catch(e) {}
 
-      const parsed = normalizeApiResultsToActuals(data, url);
-      merged = Object.assign(merged, parsed);
-    } catch(e) {
-      console.warn('Result source failed:', url, e);
-    }
-  }
-
-  return merged;
+  return {};
 }
 
 async function syncResultToFirebase(results) {
@@ -3925,6 +3917,10 @@ try {
   seedKnownResults(); // Apply any pre-known results immediately
   renderDashboard();
 
+  // ── Fetch live results IMMEDIATELY in parallel — don't wait for anything ──
+  // This fires the instant the page loads so results appear as fast as possible
+  fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+
   // Bootstrap: fetch all users + predictions from Firebase FIRST
   bootstrapData().then(() => {
     syncUserGlobals();        // rebuild USERS array with Firebase users
@@ -3933,10 +3929,19 @@ try {
     startPolling();           // real-time SSE sync
     scheduleAllResultFetches(); // schedule post-match result fetches
     setTimeout(checkStageCompletions, 2000); // check for stage celebrations
+    // Second result fetch after Firebase is ready — catches anything missed
+    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
   }).catch(e => {
     syncUserGlobals();
     rebuildUserModalList();
     startPolling();
+  });
+
+  // Re-fetch results when user comes back to the tab
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden) {
+      fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+    }
   });
 } catch(e) {
   syncUserGlobals();
