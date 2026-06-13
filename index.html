@@ -928,6 +928,30 @@ function seedKnownResults() {
   });
 }
 
+// One-time cleanup: delete any previously guessed/wrong scores from Firebase
+// so the live API can write the correct ones.
+// These were wrongly hardcoded in a previous deploy: M003 0-2, M004 3-1
+const BAD_GUESSES = {
+  M002: {hg:3, ag:1}, // South Korea vs Czech Republic — remove if guessed
+  M003: {hg:0, ag:2}, // Canada vs Bosnia — known wrong guess
+  M004: {hg:3, ag:1}, // USA vs Paraguay — known wrong guess
+};
+async function clearBadGuessedResults() {
+  for(const [mid, bad] of Object.entries(BAD_GUESSES)) {
+    const existing = la()[mid];
+    if(existing && existing.hg === bad.hg && existing.ag === bad.ag
+       && (existing.source === 'confirmed-final' || existing.source === 'auto-final')
+       && existing.lockedAt) {
+      // This matches a known bad guess — delete it so API can write correct score
+      console.log(`Clearing bad guessed result for ${mid}: ${bad.hg}-${bad.ag}`);
+      const actuals = Object.assign({}, la());
+      delete actuals[mid];
+      _cache['actuals'] = actuals;
+      await fbSet(`actuals/${mid}`, null); // delete from Firebase
+    }
+  }
+}
+
 const STAGES = [
   {key:'MD1',  label:'Matchday 1',    deadline:'2026-06-15T23:59:59Z', mids:GM.filter(m=>m[1]==='MD1').map(m=>m[0])},
   {key:'MD2',  label:'Matchday 2',    deadline:'2026-06-18T17:00:00Z', mids:GM.filter(m=>m[1]==='MD2').map(m=>m[0])},
@@ -2073,8 +2097,9 @@ function rebuildUserModalList() {
     const safeName = u.name.replace(/'/g, "\\'");
     const safeColor = u.color;
     const isCustom = !builtinNames.includes(u.name);
-    const isOwn = currentUser === u.name; // only show delete to the account owner
-    const deleteBtn = isCustom && isOwn
+    const isOwn = currentUser === u.name;
+    const canDelete = isCustom && (isOwn || isAdmin(currentUser));
+    const deleteBtn = canDelete
       ? `<button onclick="event.stopPropagation();confirmDeleteUser('${safeName}')"
            style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:var(--red);
                   border-radius:6px;padding:3px 9px;font-size:11px;font-weight:600;cursor:pointer;
@@ -2094,7 +2119,7 @@ function rebuildUserModalList() {
 }
 
 function confirmDeleteUser(name) {
-  if(currentUser !== name) { showToast('⚠ You can only delete your own account'); return; }
+  if(currentUser !== name && !isAdmin(currentUser)) { showToast('⚠ Only admins can delete other accounts'); return; }
 
   const existing = document.getElementById(`del-confirm-${name}`);
   if(existing) { existing.remove(); return; }
@@ -2119,15 +2144,15 @@ function confirmDeleteUser(name) {
 }
 
 async function deleteUser(name) {
-  if(currentUser !== name) { showToast('⚠ You can only delete your own account'); return; }
+  if(currentUser !== name && !isAdmin(currentUser)) { showToast('⚠ Only admins can delete other accounts'); return; }
+  const deletingSelf = currentUser === name;
+
   // Remove from local custom users
   const custom = getLocalCustomUsers().filter(u => u.name !== name);
   setLocalCustomUsers(custom);
 
-  // Remove only this user from Firebase. Never rewrite the whole custom_users node.
+  // Remove only this user from Firebase
   await fbSet(`custom_users/${fbKey(name)}`, null);
-
-  // Remove their predictions and PIN from Firebase
   await fbSet(`predictions/${fbKey(name)}`, null);
   await fbSet(`pins/${fbKey(name)}`, null);
 
@@ -2135,15 +2160,16 @@ async function deleteUser(name) {
   delete _cache[`pred_${name}`];
   delete _cache[`pin_${name}`];
 
-
   syncUserGlobals();
   rebuildUserModalList();
 
-  // Log out the deleted user and return to user select
-  currentUser = null;
-  document.getElementById('user-pill').textContent = 'Select User';
-  document.getElementById('user-pill').style.color = '';
-  renderDashboard();
+  // Only log out if deleting own account
+  if(deletingSelf) {
+    currentUser = null;
+    document.getElementById('user-pill').textContent = 'Select User';
+    document.getElementById('user-pill').style.color = '';
+    renderDashboard();
+  }
   showToast(`🗑 ${name} deleted`);
 }
 
@@ -2258,6 +2284,8 @@ const BUILTIN_USERS = [
   {name:'Moataz', color:'#3b82f6'},
   {name:'Steve',  color:'#22c55e'},
 ];
+const ADMINS = ['Moataz']; // Admins can delete any custom user
+function isAdmin(user) { return ADMINS.includes(user); }
 // CUSTOM_USERS_KEY, getLocalCustomUsers, setLocalCustomUsers defined in storage layer
 const AVAIL_COLORS = ['#e85d04','#3b82f6','#22c55e','#a855f7','#f59e0b','#ec4899','#06b6d4','#84cc16','#ef4444','#8b5cf6'];
 
@@ -3917,9 +3945,12 @@ try {
   seedKnownResults(); // Apply any pre-known results immediately
   renderDashboard();
 
-  // ── Fetch live results IMMEDIATELY in parallel — don't wait for anything ──
-  // This fires the instant the page loads so results appear as fast as possible
-  fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+  // ── Clear any previously wrong guessed scores first, then fetch live ──
+  clearBadGuessedResults().then(() => {
+    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+  }).catch(() => {
+    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+  });
 
   // Bootstrap: fetch all users + predictions from Firebase FIRST
   bootstrapData().then(() => {
