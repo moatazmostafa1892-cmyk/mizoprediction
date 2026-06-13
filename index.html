@@ -1473,6 +1473,23 @@ function applySnapshot(all) {
   return snapBefore !== snapAfter;
 }
 
+// Call debugApiResults() in browser console (F12) to diagnose missing results
+async function debugApiResults() {
+  console.log('Fetching worldcup26.ir...');
+  try {
+    const r = await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent('https://worldcup26.ir/get/games'),{cache:'no-cache'});
+    const data = JSON.parse(await r.text());
+    const finished = (data.games||[]).filter(g=>String(g.finished).toUpperCase()==='TRUE');
+    console.log('Finished games from API:', finished.length);
+    finished.forEach(g=>{
+      const h=String(g.home_team_name_en||g.home_team||g.home||'').trim();
+      const a=String(g.away_team_name_en||g.away_team||g.away||'').trim();
+      const found=ALL.find(m=>teamsMatch(h,m[4])&&teamsMatch(a,m[5]))||ALL.find(m=>teamsMatch(h,m[5])&&teamsMatch(a,m[4]));
+      console.log(`id:${g.id} | ${h} ${g.home_score}-${g.away_score} ${a} → ${found?found[0]:'❌ NO MATCH'}`);
+    });
+  } catch(e){console.error('API error:',e);}
+}
+
 function refreshUI() {
   rebuildUserModalList();
   renderDashboard();
@@ -1544,27 +1561,45 @@ const PROXY = 'https://api.allorigins.win/raw?url=';
 // worldcup26: id field (same mapping)
 
 function parseWC2026Api(raw) {
-  // wc2026api.com format: [{match_number, home_team, away_team, home_score, away_score, phase, status}]
   let data;
   try { data = JSON.parse(raw); } catch { return {}; }
   const arr = Array.isArray(data) ? data : (data.matches || data.data || []);
   const out = {};
   arr.forEach(m => {
-    const num = m.match_number || m.id;
-    if(!num) return;
-    // Only take finished matches
     if(m.phase !== 'FT' && m.phase !== 'FT_PEN' && m.status !== 'finished' && m.status !== 'FT') return;
     const hg = m.home_score ?? m.score?.home;
     const ag = m.away_score ?? m.score?.away;
     if(hg == null || ag == null) return;
-    const mid = 'M' + String(num).padStart(3,'0');
-    out[mid] = {hg: +hg, ag: +ag, source: 'wc2026api', ts: Date.now()};
+
+    // Match by team names first
+    const homeApi = normTeam(String(m.home_team || m.home || '').trim());
+    const awayApi = normTeam(String(m.away_team || m.away || '').trim());
+    let mid = null;
+
+    if(homeApi && awayApi) {
+      const found = ALL.find(x =>
+        teamsMatch(homeApi,x[4]) && teamsMatch(awayApi,x[5])
+      ) || ALL.find(x =>
+        teamsMatch(homeApi,x[5]) && teamsMatch(awayApi,x[4])
+      );
+      if(found) mid = found[0];
+    }
+
+    // Fallback: numeric ID
+    if(!mid) {
+      const num = m.match_number || m.id;
+      if(num) {
+        const candidate = 'M' + String(parseInt(num)).padStart(3,'0');
+        if(ALL.some(x => x[0] === candidate)) mid = candidate;
+      }
+    }
+
+    if(mid) out[mid] = {hg: +hg, ag: +ag, source: 'api', ts: Date.now()};
   });
   return out;
 }
 
 function parseWorldcup26(raw) {
-  // worldcup26.ir format: {games: [{id, home_score, away_score, finished, home_team_name_en, away_team_name_en}]}
   let data;
   try { data = JSON.parse(raw); } catch { return {}; }
   const arr = data.games || (Array.isArray(data) ? data : []);
@@ -1574,10 +1609,31 @@ function parseWorldcup26(raw) {
     const hg = parseFloat(g.home_score);
     const ag = parseFloat(g.away_score);
     if(isNaN(hg) || isNaN(ag)) return;
-    const num = parseInt(g.id);
-    if(!num) return;
-    const mid = 'M' + String(num).padStart(3,'0');
-    out[mid] = {hg, ag, source: 'worldcup26', ts: Date.now()};
+
+    // Try matching by team names first (most reliable)
+    const homeApi = normTeam(String(g.home_team_name_en || g.home_team || g.home || '').trim());
+    const awayApi = normTeam(String(g.away_team_name_en || g.away_team || g.away || '').trim());
+    let mid = null;
+
+    if(homeApi && awayApi) {
+      const found = ALL.find(m =>
+        teamsMatch(homeApi,m[4]) && teamsMatch(awayApi,m[5])
+      ) || ALL.find(m =>
+        teamsMatch(homeApi,m[5]) && teamsMatch(awayApi,m[4])
+      );
+      if(found) mid = found[0];
+    }
+
+    // Fallback: match by numeric ID if team names didn't work
+    if(!mid) {
+      const num = parseInt(g.id);
+      if(num && num >= 1 && num <= 104) {
+        const candidate = 'M' + String(num).padStart(3,'0');
+        if(ALL.some(m => m[0] === candidate)) mid = candidate;
+      }
+    }
+
+    if(mid) out[mid] = {hg, ag, source: 'api', ts: Date.now()};
   });
   return out;
 }
