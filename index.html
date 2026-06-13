@@ -925,41 +925,36 @@ const ALL = [...GM, ...KO];
 
 // ── KNOWN RESULTS (pre-seeded, updated as games finish) ─────────────
 // These ensure results appear even if API sync fails
-const KNOWN_RESULTS = {
-  M001: {hg:2, ag:0, source:'confirmed-final', locked:true, final:true, status:'FT', ts:1749679200000, lockedAt:'2026-06-11T22:00:00.000Z'}, // Mexico 2-0 South Africa
-};
-// All other results come from the live API (worldcup26.ir / wc2026api.com)
-// Never hardcode scores here — use the API to get accurate results
+// No hardcoded results — all scores come exclusively from the live API
+// (worldcup26.ir / wc2026api.com). This prevents wrong scores ever being seeded.
+const KNOWN_RESULTS = {};
 
 function seedKnownResults() {
-  Object.entries(KNOWN_RESULTS).forEach(([mid, res]) => {
-    const existing = la()[mid];
-    // Only seed if not already saved (locked takes priority)
-    if(!existing || !existing.locked) {
-      saOne(mid, res);
-    }
-  });
+  // No-op — all results come from the live API only
+  // Never hardcode scores here to avoid wrong data being permanently stored
 }
 
-// One-time cleanup: force-delete wrongly guessed scores from Firebase
-// Reads DIRECTLY from Firebase (bypasses cache) to ignore locked flags
+// On load: clear any non-manual actuals that have old locked/confirmed-final flags
+// These were wrongly set by previous code versions and block API updates
 async function clearBadGuessedResults() {
-  const BAD = {
-    M003: {hg:0, ag:2}, // Canada vs Bosnia — wrong guess
-    M004: {hg:3, ag:1}, // USA vs Paraguay — wrong guess
-  };
   try {
     const fbActuals = await fbGet('actuals') || {};
-    for(const [mid, bad] of Object.entries(BAD)) {
-      const stored = fbActuals[mid];
-      if(stored && stored.hg === bad.hg && stored.ag === bad.ag) {
-        // Delete from Firebase and cache — live API will fill in the real score
-        await fbSet(`actuals/${mid}`, null);
-        const actuals = Object.assign({}, la());
-        delete actuals[mid];
-        _cache['actuals'] = actuals;
-        console.log(`Cleared wrong guessed score for ${mid}`);
+    const toDelete = [];
+    Object.entries(fbActuals).forEach(([mid, stored]) => {
+      if(!stored) return;
+      // If it was stored by old code (has lockedAt or confirmed-final source)
+      // AND it wasn't manually entered — delete it so API can write fresh
+      const isOldFormat = stored.lockedAt || stored.source === 'confirmed-final' || stored.source === 'auto-final';
+      if(isOldFormat && stored.source !== 'manual') {
+        toDelete.push(mid);
       }
+    });
+    for(const mid of toDelete) {
+      await fbSet(`actuals/${mid}`, null);
+      const actuals = Object.assign({}, la());
+      delete actuals[mid];
+      _cache['actuals'] = actuals;
+      console.log(`Cleared old-format result for ${mid}`);
     }
   } catch(e) {}
 }
@@ -1195,19 +1190,20 @@ function hasActualScore(mid){
 }
 function isActualFinalLocked(mid){
   const a = la()[mid];
-  return !!(a && hasActualScore(mid) && (a.locked === true || a.final === true || a.status === 'FT' || a.source === 'auto-final' || a.source === 'confirmed-final'));
+  // Only lock manual entries — API results can always be overwritten with fresher data
+  return !!(a && hasActualScore(mid) && a.source === 'manual');
 }
 function finaliseActualObject(res){
-  return Object.assign({}, res, {
+  const isManual = res.source === 'manual';
+  const out = {
     hg: Number(res.hg),
     ag: Number(res.ag),
-    locked: true,
-    final: true,
-    status: 'FT',
-    source: res.source && String(res.source).includes('confirmed') ? 'confirmed-final' : 'auto-final',
-    lockedAt: res.lockedAt || new Date().toISOString(),
-    ts: res.ts || Date.now()
-  });
+    source: isManual ? 'manual' : 'api',
+    ts: res.ts || Date.now(),
+  };
+  // Only manual entries get locked — API entries are always overwriteable
+  if(isManual) out.locked = true;
+  return out;
 }
 function shouldSkipActualFetch(mid){
   return isActualFinalLocked(mid);
@@ -1323,13 +1319,13 @@ async function bootstrapData() {
       _cache[`pred_${u}`] = merged2;
     });
 
-    // ── Parse actuals — remote wins, but never erase a locked local result
+    // ── Parse actuals — remote wins unless local was manually entered
     if(all.actuals) {
       const localAct = la();
       const merged = Object.assign({}, localAct);
       Object.keys(all.actuals).forEach(mid => {
         const loc = localAct[mid];
-        if(!loc || !loc.locked || all.actuals[mid]?.locked) {
+        if(!loc || loc.source !== 'manual') {
           merged[mid] = all.actuals[mid];
         }
       });
@@ -1455,15 +1451,15 @@ function applySnapshot(all) {
   if(all.real_bracket && typeof all.real_bracket === 'object') {
     _cache['real_bracket'] = all.real_bracket;
   }
-  // Actuals — remote wins EXCEPT for locally-locked results (manual or confirmed)
+  // Actuals — remote always wins UNLESS local entry was manually entered
   if(all.actuals) {
     const local = la();
     const remote = all.actuals;
     const merged = Object.assign({}, local);
     Object.keys(remote).forEach(mid => {
       const localEntry = local[mid];
-      // Only overwrite local if local isn't locked, or if remote has a locked result too
-      if(!localEntry || !localEntry.locked || remote[mid]?.locked) {
+      // Only protect manually-entered scores from being overwritten
+      if(!localEntry || localEntry.source !== 'manual') {
         merged[mid] = remote[mid];
       }
     });
@@ -4001,43 +3997,45 @@ document.addEventListener('click', e => {
 // ═══════════════════════════════════════════════════════════════════
 // ── INIT ────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
+// ── Helper: fetch live results and sync immediately ──────────────────
+function fetchAndSyncResults() {
+  return fetchAllResults()
+    .then(r => { if(r && Object.keys(r).length) return syncResultToFirebase(r); })
+    .catch(() => {});
+}
+
 try {
   // Show loading state in modal while Firebase fetches
   const elModal = document.getElementById('modal-users-list');
   if(elModal) elModal.innerHTML = '<div style="padding:20px;text-align:center;color:var(--grey);font-size:13px"><div style="font-size:22px;margin-bottom:8px">⏳</div>Loading players…</div>';
 
-  seedKnownResults(); // Apply any pre-known results immediately
   renderDashboard();
 
-  // ── Clear any previously wrong guessed scores first, then fetch live ──
-  clearBadGuessedResults().then(() => {
-    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
-  }).catch(() => {
-    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
-  });
-
-  // Bootstrap: fetch all users + predictions from Firebase FIRST
-  bootstrapData().then(() => {
-    syncUserGlobals();        // rebuild USERS array with Firebase users
-    rebuildUserModalList();   // show final user list in modal
-    renderDashboard();
-    startPolling();           // real-time SSE sync
-    scheduleAllResultFetches(); // schedule post-match result fetches
-    setTimeout(checkStageCompletions, 2000); // check for stage celebrations
-    // Second result fetch after Firebase is ready — catches anything missed
-    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
-  }).catch(e => {
+  // ── Fire BOTH Firebase + live results at exactly the same time ──────
+  // Nothing waits for anything else — fully parallel
+  Promise.all([
+    // 1. Clean old bad data then fetch fresh results
+    clearBadGuessedResults().then(() => fetchAndSyncResults()),
+    // 2. Load all Firebase data (users, predictions, groups etc)
+    bootstrapData().then(() => {
+      syncUserGlobals();
+      rebuildUserModalList();
+      renderDashboard();
+      startPolling();
+      scheduleAllResultFetches();
+      setTimeout(checkStageCompletions, 2000);
+    })
+  ]).catch(() => {
     syncUserGlobals();
     rebuildUserModalList();
     startPolling();
   });
 
-  // Re-fetch results when user comes back to the tab
+  // Re-fetch results every time user returns to the tab
   document.addEventListener('visibilitychange', () => {
-    if(!document.hidden) {
-      fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
-    }
+    if(!document.hidden) fetchAndSyncResults();
   });
+
 } catch(e) {
   syncUserGlobals();
   rebuildUserModalList();
