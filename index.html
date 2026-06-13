@@ -913,19 +913,23 @@ const ALL = [...GM, ...KO];
 // ── KNOWN RESULTS (pre-seeded, updated as games finish) ─────────────
 // These ensure results appear even if API sync fails
 const KNOWN_RESULTS = {
-  M001: {hg:2, ag:0, source:'confirmed', ts:1749679200000}, // Mexico 2-0 South Africa
+  M001: {hg:2, ag:0, source:'confirmed-final', locked:true, final:true, status:'FT', ts:1749679200000, lockedAt:'2026-06-11T22:00:00.000Z'}, // Mexico 2-0 South Africa
+  M002: {hg:3, ag:1, source:'confirmed-final', locked:true, final:true, status:'FT', ts:1749690000000, lockedAt:'2026-06-12T01:00:00.000Z'}, // South Korea 3-1 Czech Republic
+  M003: {hg:0, ag:2, source:'confirmed-final', locked:true, final:true, status:'FT', ts:1749765600000, lockedAt:'2026-06-12T22:00:00.000Z'}, // Canada 0-2 Bosnia
+  M004: {hg:3, ag:1, source:'confirmed-final', locked:true, final:true, status:'FT', ts:1749776400000, lockedAt:'2026-06-13T01:00:00.000Z'}, // USA 3-1 Paraguay
 };
 
+// seedKnownResults pushes these to Firebase if not already there
+// They use locked:true so they can never be wiped by a stale API response
+
 function seedKnownResults() {
-  const actuals = la();
-  let changed = 0;
   Object.entries(KNOWN_RESULTS).forEach(([mid, res]) => {
-    if(!actuals[mid]) {
-      actuals[mid] = res;
-      changed++;
+    const existing = la()[mid];
+    // Only seed if not already saved (locked takes priority)
+    if(!existing || !existing.locked) {
+      saOne(mid, res);
     }
   });
-  if(changed > 0) sa(actuals);
 }
 
 const STAGES = [
@@ -1067,6 +1071,13 @@ async function loadActuals() {
 function sa(data) {
   _cache['actuals'] = data;
   fbSet('actuals', data);
+}
+// Save a single actual result — safer than overwriting the whole object
+function saOne(mid, result) {
+  const actuals = Object.assign({}, la());
+  actuals[mid] = result;
+  _cache['actuals'] = actuals;
+  fbSet(`actuals/${mid}`, result); // write only this match, never touches others
 }
 
 // ── ROBUST ACTUAL RESULT SYNC ─────────────────────────────────────
@@ -1280,11 +1291,17 @@ async function bootstrapData() {
       _cache[`pred_${u}`] = merged2;
     });
 
-    // ── Parse actuals ───────────────────────────────────────────────
+    // ── Parse actuals — remote wins, but never erase a locked local result
     if(all.actuals) {
       const localAct = la();
-      const mergedAct = Object.assign({}, localAct, all.actuals);
-      _cache['actuals'] = mergedAct;
+      const merged = Object.assign({}, localAct);
+      Object.keys(all.actuals).forEach(mid => {
+        const loc = localAct[mid];
+        if(!loc || !loc.locked || all.actuals[mid]?.locked) {
+          merged[mid] = all.actuals[mid];
+        }
+      });
+      _cache['actuals'] = merged;
     }
 
     // Seed Moataz if empty
@@ -1406,11 +1423,19 @@ function applySnapshot(all) {
   if(all.real_bracket && typeof all.real_bracket === 'object') {
     _cache['real_bracket'] = all.real_bracket;
   }
-  // Actuals
+  // Actuals — remote wins EXCEPT for locally-locked results (manual or confirmed)
   if(all.actuals) {
-    const mergedAct = Object.assign({}, la(), all.actuals);
-    _cache['actuals'] = mergedAct;
-
+    const local = la();
+    const remote = all.actuals;
+    const merged = Object.assign({}, local);
+    Object.keys(remote).forEach(mid => {
+      const localEntry = local[mid];
+      // Only overwrite local if local isn't locked, or if remote has a locked result too
+      if(!localEntry || !localEntry.locked || remote[mid]?.locked) {
+        merged[mid] = remote[mid];
+      }
+    });
+    _cache['actuals'] = merged;
   }
   const snapAfter = JSON.stringify({
     users: getLocalCustomUsers().map(u=>u.name).join(','),
@@ -1580,20 +1605,22 @@ async function fetchAllResults() {
 
 async function syncResultToFirebase(results) {
   if(!results || !Object.keys(results).length) return;
-  const actuals = la();
   let changed = 0;
 
-  Object.entries(results).forEach(([mid, res]) => {
-    if(!mid || !ALL.some(m=>m[0]===mid)) return;
-    if(isActualFinalLocked(mid)) return;
+  for(const [mid, res] of Object.entries(results)) {
+    if(!mid || !ALL.some(m=>m[0]===mid)) continue;
+    if(isActualFinalLocked(mid)) continue; // already locked — skip
 
-    actuals[mid] = finaliseActualObject(res);
+    const finalResult = finaliseActualObject(res);
+    // Write only this single match — never touch any other match in Firebase
+    const actuals = Object.assign({}, la());
+    actuals[mid] = finalResult;
+    _cache['actuals'] = actuals;
+    await fbSet(`actuals/${mid}`, finalResult);
     changed++;
-  });
+  }
 
   if(changed > 0) {
-    _cache['actuals'] = actuals;
-    await fbSet('actuals', actuals);
     renderDashboard();
     if(document.getElementById('compare')?.classList.contains('act')) renderCompare();
     if(document.getElementById('bracket-real')?.classList.contains('act')) renderRealGroups();
@@ -1966,7 +1993,6 @@ function doLogin() {
     document.getElementById('login-pin').focus();
   }
 
-  lockActualFinal(results);
 }
 
 // ── SIGNUP ────────────────────────────────────────────────────────────
@@ -3525,31 +3551,97 @@ function saveRealSlot(input) {
 }
 
 function renderBracketReal() {
-  // Load real R32 from Firebase-synced real_bracket store
   const rb = loadRealBracket();
+  const S  = calcRealStandings();
+  const thirds = calcRealThirds();
+  const tree = document.getElementById('br-tree-real');
+  if(!tree) return;
+  tree.innerHTML = '';
 
-  // R32 slots — teams come from real_bracket store (editable)
-  const r32 = [
-    {id:'M74',d:'Jun 29–Boston',   t1:rb['M74_t1']||'', t2:rb['M74_t2']||''},
-    {id:'M77',d:'Jun 30–E.Ruth.',  t1:rb['M77_t1']||'', t2:rb['M77_t2']||''},
-    {id:'M73',d:'Jun 28–LA',       t1:rb['M73_t1']||'', t2:rb['M73_t2']||''},
-    {id:'M75',d:'Jun 29–Mont.',    t1:rb['M75_t1']||'', t2:rb['M75_t2']||''},
-    {id:'M78',d:'Jun 30–Dallas',   t1:rb['M78_t1']||'', t2:rb['M78_t2']||''},
-    {id:'M76',d:'Jun 29–Houston',  t1:rb['M76_t1']||'', t2:rb['M76_t2']||''},
-    {id:'M79',d:'Jun 30–MexCity',  t1:rb['M79_t1']||'', t2:rb['M79_t2']||''},
-    {id:'M80',d:'Jul 1–Atlanta',   t1:rb['M80_t1']||'', t2:rb['M80_t2']||''},
-    {id:'M83',d:'Jul 2–Toronto',   t1:rb['M83_t1']||'', t2:rb['M83_t2']||''},
-    {id:'M84',d:'Jul 2–LA',        t1:rb['M84_t1']||'', t2:rb['M84_t2']||''},
-    {id:'M81',d:'Jul 1–SF',        t1:rb['M81_t1']||'', t2:rb['M81_t2']||''},
-    {id:'M82',d:'Jul 1–Seattle',   t1:rb['M82_t1']||'', t2:rb['M82_t2']||''},
-    {id:'M85',d:'Jul 2–Vancouver', t1:rb['M85_t1']||'', t2:rb['M85_t2']||''},
-    {id:'M86',d:'Jul 3–Miami',     t1:rb['M86_t1']||'', t2:rb['M86_t2']||''},
-    {id:'M87',d:'Jul 3–KC',        t1:rb['M87_t1']||'', t2:rb['M87_t2']||''},
-    {id:'M88',d:'Jul 3–Dallas',    t1:rb['M88_t1']||'', t2:rb['M88_t2']||''},
+  const W  = g => S[g]?.[0]?.p > 0 ? S[g][0].name : '';
+  const RU = g => S[g]?.[1]?.p > 0 ? S[g][1].name : '';
+  const qualGroups = thirds.filter(t=>t.qualifies).map(t=>t.grp).sort().join('');
+
+  function best3rd(winnerGrp) {
+    const combo = ANNEX_C[qualGroups];
+    if(combo && combo[winnerGrp]) {
+      const team = thirds.find(t => t.grp === combo[winnerGrp] && t.p > 0);
+      if(team) return team.name;
+    }
+    const eligible = {
+      A:['C','E','F','H','I'],B:['E','F','G','I','J'],D:['B','E','F','I','J'],
+      E:['A','B','C','D','F'],G:['A','E','H','I','J'],I:['C','D','F','G','H'],
+      K:['D','E','I','J','L'],L:['E','H','I','J','K']
+    };
+    const m = thirds.filter(t=>t.qualifies && t.p > 0).find(t=>(eligible[winnerGrp]||[]).includes(t.grp));
+    return m ? m.name : '';
+  }
+
+  function getTeam(mid, slot, realTeam, fallbackLabel) {
+    if(realTeam) return {name: realTeam, confirmed: true};
+    if(rb[mid+'_'+slot]) return {name: rb[mid+'_'+slot], confirmed: true};
+    return {name: fallbackLabel, confirmed: false};
+  }
+
+  const R32_DEF = [
+    {id:'M74',d:'Jun 29',t1:getTeam('M74','t1',W('E'),'Winner Grp E'),t2:getTeam('M74','t2',best3rd('E'),'Best 3rd (ABCDF)')},
+    {id:'M77',d:'Jun 30',t1:getTeam('M77','t1',W('I'),'Winner Grp I'),t2:getTeam('M77','t2',best3rd('I'),'Best 3rd (CDFGH)')},
+    {id:'M73',d:'Jun 28',t1:getTeam('M73','t1',RU('A'),'Runner-up A'),t2:getTeam('M73','t2',RU('B'),'Runner-up B')},
+    {id:'M75',d:'Jun 29',t1:getTeam('M75','t1',W('F'),'Winner Grp F'),t2:getTeam('M75','t2',RU('C'),'Runner-up C')},
+    {id:'M78',d:'Jun 30',t1:getTeam('M78','t1',RU('E'),'Runner-up E'),t2:getTeam('M78','t2',RU('I'),'Runner-up I')},
+    {id:'M76',d:'Jun 29',t1:getTeam('M76','t1',W('C'),'Winner Grp C'),t2:getTeam('M76','t2',RU('F'),'Runner-up F')},
+    {id:'M79',d:'Jun 30',t1:getTeam('M79','t1',W('A'),'Winner Grp A'),t2:getTeam('M79','t2',best3rd('A'),'Best 3rd (CEFHI)')},
+    {id:'M80',d:'Jul 1', t1:getTeam('M80','t1',W('L'),'Winner Grp L'),t2:getTeam('M80','t2',best3rd('L'),'Best 3rd (EHIJK)')},
+    {id:'M83',d:'Jul 2', t1:getTeam('M83','t1',RU('K'),'Runner-up K'),t2:getTeam('M83','t2',RU('L'),'Runner-up L')},
+    {id:'M84',d:'Jul 2', t1:getTeam('M84','t1',W('H'),'Winner Grp H'),t2:getTeam('M84','t2',RU('J'),'Runner-up J')},
+    {id:'M81',d:'Jul 1', t1:getTeam('M81','t1',W('D'),'Winner Grp D'),t2:getTeam('M81','t2',best3rd('D'),'Best 3rd (BEFIJ)')},
+    {id:'M82',d:'Jul 1', t1:getTeam('M82','t1',W('G'),'Winner Grp G'),t2:getTeam('M82','t2',best3rd('G'),'Best 3rd (AEHIJ)')},
+    {id:'M85',d:'Jul 2', t1:getTeam('M85','t1',W('B'),'Winner Grp B'),t2:getTeam('M85','t2',best3rd('B'),'Best 3rd (EFGIJ)')},
+    {id:'M86',d:'Jul 3', t1:getTeam('M86','t1',W('J'),'Winner Grp J'),t2:getTeam('M86','t2',RU('H'),'Runner-up H')},
+    {id:'M87',d:'Jul 3', t1:getTeam('M87','t1',W('K'),'Winner Grp K'),t2:getTeam('M87','t2',best3rd('K'),'Best 3rd (DEIJL)')},
+    {id:'M88',d:'Jul 3', t1:getTeam('M88','t1',RU('D'),'Runner-up D'),t2:getTeam('M88','t2',RU('G'),'Runner-up G')},
   ];
-  buildBracketTree(document.getElementById('br-tree-real'), r32, null, true);
-}
 
+  const winner_of = mid => rb[mid+'_winner'] || null;
+
+  const mkMatch = (mid, date, t1obj, t2obj) => {
+    const w = winner_of(mid);
+    const t1 = t1obj?.name || ''; const t2 = t2obj?.name || '';
+    const t1conf = t1obj?.confirmed !== false; const t2conf = t2obj?.confirmed !== false;
+    const canPick = !!(t1 && t2 && !w && t1conf && t2conf);
+    const mkTeam = (team, slot, confirmed) => {
+      if(!team) return `<div class="bteam tbd">TBD</div>`;
+      const isWinner = w===team, isLoser = w && w!==team;
+      return `<div class="bteam${isLoser?' bteam-loser':''}${isWinner?' bteam-winner':''}"
+        ${canPick?`onclick="realBracketPick('${mid}','${team.replace(/'/g,"\'")}','${slot}')" style="cursor:pointer"`:''}>
+        ${isWinner?'<span style="color:var(--gold);margin-right:5px;font-size:10px">▶</span>':''}
+        <span style="${!confirmed?'color:var(--grey);font-style:italic;font-size:11px':''}">${team}</span>
+        ${canPick?'<span class="pick-hint">tap to pick</span>':''}
+      </div>`;
+    };
+    return `<div class="bmatch${w?' bmatch-done':''}">
+      <div class="bhdr">${mid} · ${date}</div>
+      ${mkTeam(t1,'t1',t1conf)}${mkTeam(t2,'t2',t2conf)}
+    </div>`;
+  };
+
+  const col = (cls, html) => { const d=document.createElement('div'); d.className=`br-col ${cls}`; d.innerHTML=html; return d; };
+  const g = px => `<div style="height:${px}px;flex-shrink:0"></div>`;
+  const get = (mid,slot) => rb[mid+'_'+slot]?{name:rb[mid+'_'+slot],confirmed:true}:{name:'',confirmed:false};
+
+  tree.appendChild(col('bw r32c', `<div class="br-rnd">Round of 32</div>`+R32_DEF.map((m,i)=>mkMatch(m.id,m.d,m.t1,m.t2)+(i%2===0?g(4):'')).join('')));
+  tree.appendChild(col('bconn',''));
+  const r16=[{id:'M89',d:'Jul 4'},{id:'M90',d:'Jul 4'},{id:'M91',d:'Jul 5'},{id:'M92',d:'Jul 5'},{id:'M93',d:'Jul 6'},{id:'M94',d:'Jul 6'},{id:'M95',d:'Jul 7'},{id:'M96',d:'Jul 7'}];
+  tree.appendChild(col('bw r16c',`<div class="br-rnd">Round of 16</div>`+g(54)+r16.map((m,i)=>mkMatch(m.id,m.d,get(m.id,'t1'),get(m.id,'t2'))+g(i<7?74:0)).join('')));
+  tree.appendChild(col('bconn',''));
+  const qf=[{id:'M97',d:'Jul 9'},{id:'M98',d:'Jul 10'},{id:'M99',d:'Jul 11'},{id:'M100',d:'Jul 11'}];
+  tree.appendChild(col('bw qfc',`<div class="br-rnd">Quarterfinals</div>`+g(162)+qf.map((m,i)=>mkMatch(m.id,m.d,get(m.id,'t1'),get(m.id,'t2'))+g(i<3?200:0)).join('')));
+  tree.appendChild(col('bconn',''));
+  const sf=[{id:'M101',d:'Jul 14'},{id:'M102',d:'Jul 15'}];
+  tree.appendChild(col('bw sfc',`<div class="br-rnd">Semifinals</div>`+g(375)+sf.map((m,i)=>mkMatch(m.id,m.d,get(m.id,'t1'),get(m.id,'t2'))+g(i<1?490:0)).join('')));
+  tree.appendChild(col('bconn',''));
+  tree.appendChild(col('bw finc wide',`<div class="br-rnd">Final · 3rd Place</div>`+g(825)+mkMatch('M104','Jul 19',get('M104','t1'),get('M104','t2'))+g(30)+`<div class="trdc">${mkMatch('M103','Jul 18',get('M103','t1'),get('M103','t2'))}</div>`));
+}
 // Keep old name for compatibility
 function renderBracket() { renderBracketPred(); }
 
@@ -3670,20 +3762,29 @@ function setCmpFilt(f,btn){
 
 
 function saveActual(mid, val, isAuto=false) {
-  // Manual actual-score entry is disabled. Results must come only from the live/API sync.
-  if(!isAuto) return;
   val=String(val||'').trim(); if(!val) return;
   const pts=val.split(/[-–]/); if(pts.length!==2) return;
   const hg=+pts[0], ag=+pts[1]; if(isNaN(hg)||isNaN(ag)) return;
-  const actuals=la();
-  actuals[mid]={hg, ag, source:'api', ts:Date.now()};
-  sa(actuals);
+  // Build result object — manual entries also get locked=true so they persist
+  const existing = la()[mid] || {};
+  const result = Object.assign({}, existing, {
+    hg, ag,
+    source: isAuto ? 'auto-final' : 'manual',
+    locked: true,
+    final: true,
+    status: 'FT',
+    ts: Date.now(),
+    lockedAt: existing.lockedAt || new Date().toISOString()
+  });
+  saOne(mid, result); // write only this match to Firebase
   updateHeroStats();
   renderDashboard();
+  if(document.getElementById('compare')?.classList.contains('act')) renderCompare();
   if(document.getElementById('bracket-real')?.classList.contains('act') &&
      document.getElementById('real-groups-panel')?.style.display !== 'none') {
     renderRealGroups();
   }
+  if(!isAuto) toast(`✓ Result saved: ${mid} ${hg}–${ag}`);
   setTimeout(checkStageCompletions, 500);
 }
 
@@ -3859,17 +3960,8 @@ try {
 })();
 
 
-normalizeFinalActualLocks();
 
-async function debugM003Sync(){
-  const match = ALL.find(m=>m[0]==='M003');
-  console.log('M003 local match:', match);
-  console.log('M003 current actual:', la()['M003']);
-  const r = await fetchAllResults();
-  console.log('Fetched normalized results:', r);
-  console.log('M003 fetched result:', r['M003']);
-  return r['M003'] || null;
-}
+
 
 </script>
 
@@ -3975,15 +4067,7 @@ async function debugM003Sync(){
   };
 })();
 
-async function debugM003Sync(){
-  const match = ALL.find(m=>m[0]==='M003');
-  console.log('M003 local match:', match);
-  console.log('M003 current actual:', la()['M003']);
-  const r = await fetchAllResults();
-  console.log('Fetched normalized results:', r);
-  console.log('M003 fetched result:', r['M003']);
-  return r['M003'] || null;
-}
+
 
 </script>
 
