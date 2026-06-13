@@ -1477,8 +1477,8 @@ function applySnapshot(all) {
 async function debugApiResults() {
   console.log('Fetching worldcup26.ir...');
   try {
-    const r = await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent('https://worldcup26.ir/get/games'),{cache:'no-cache'});
-    const data = JSON.parse(await r.text());
+    const text = await fetchWithProxy('https://worldcup26.ir/get/games');
+    const data = JSON.parse(text);
     const finished = (data.games||[]).filter(g=>String(g.finished).toUpperCase()==='TRUE');
     console.log('Finished games from API:', finished.length);
     finished.forEach(g=>{
@@ -1554,7 +1554,29 @@ const MOATAZ={M001:{hg:2,ag:1},M002:{hg:3,ag:1},M003:{hg:1,ag:1},M004:{hg:2,ag:1
 // Fallback: worldcup26.ir  — free, no key, finished="TRUE" when done
 // Both polled via allorigins CORS proxy
 
-const PROXY = 'https://api.allorigins.win/raw?url=';
+// Multiple CORS proxies — try each until one works
+const PROXIES = [
+  'https://corsproxy.io/?',
+  'https://api.codetabs.com/v1/proxy?quest=',
+  'https://api.allorigins.win/raw?url=',
+  'https://thingproxy.freeboard.io/fetch/',
+];
+
+async function fetchWithProxy(url) {
+  for(const proxy of PROXIES) {
+    try {
+      const r = await fetch(proxy + encodeURIComponent(url), {
+        cache: 'no-cache',
+        signal: AbortSignal.timeout(8000)
+      });
+      if(r.ok) {
+        const text = await r.text();
+        if(text && text.length > 10) return text;
+      }
+    } catch(e) { /* try next proxy */ }
+  }
+  throw new Error('All proxies failed');
+}
 
 // Match our internal M001-M104 IDs to the APIs' numeric match IDs (1-104)
 // wc2026api: match_number field (1=M001, 2=M002 ... 104=M104)
@@ -1639,12 +1661,8 @@ function parseWorldcup26(raw) {
 }
 
 async function fetchResultsFromSource(url, parser) {
-  const r = await fetch(PROXY + encodeURIComponent(url), {
-    cache: 'no-cache',
-    signal: AbortSignal.timeout(12000)
-  });
-  if(!r.ok) throw new Error('HTTP ' + r.status);
-  return parser(await r.text());
+  const text = await fetchWithProxy(url);
+  return parser(text);
 }
 
 
