@@ -1,42 +1,7 @@
 {
-  "rules": {
-    ".read": false,
-    ".write": false,
-    "actuals": {
-      ".read": true,
-      ".write": true
-    },
-    "predictions": {
-      ".read": true,
-      ".write": true
-    },
-    "pins": {
-      ".read": true,
-      ".write": true
-    },
-    "custom_users": {
-      ".read": true,
-      ".write": true
-    },
-    "lb_groups": {
-      ".read": true,
-      ".write": true
-    },
-    "real_bracket": {
-      ".read": true,
-      ".write": true
-    },
-    "pred_brackets": {
-      ".read": true,
-      ".write": true
-    },
-    "cel_shown": {
-      ".read": true,
-      ".write": true
-    },
-    "wa_numbers": {
-      ".read": false,
-      ".write": false
-    }
-  }
+  "name": "wc2026-predictions",
+  "version": "1.0.0",
+  "description": "WC 2026 Predictions App",
+  "private": true,
+  "dependencies": {}
 }
