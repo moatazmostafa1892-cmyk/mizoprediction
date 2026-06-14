@@ -6,7 +6,7 @@
 <title>⚽ WC 2026 Predictions</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
-<style>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=rr9VHI0Yy4YiaR_uXa5itxItvo5TS7OeaZtVOkaftaS3RIo9uM8loEFFW4UQKzIUjP5cwcWISksJKXz6mBAkDrcaUBjuXDEkG7VNRV3UObzULt8eFyafv9U3utFfL25wJhZBewLwddLSCK_gxIpFbxw-P_XFK_xNYHVqzbmGYxBwutMsVpCnR9TDlQ1bAQNYJUPqbG8oGhM1Egk2vPBVva8x2sQ1QB7NPEoWGt7OMjGZtLYe2-9GCECUggXmzlXGWNLZ5DfxdgO5I3kIRgghn3xbkDBha0xoMHeUTzDOLlT6Jj8Vu7QeCzHL8xXZAVkQcKvINwrsqeFhvCnIVmJjxw" charset="UTF-8"></script><style>
 :root{
   --pitch:#071a0f;--card:#0b2015;--card2:#0f2a1c;--border:#1a3a26;
   --gold:#f5c518;--gold2:#b8941a;--white:#eef4ee;--grey:#6b8a76;
@@ -507,6 +507,187 @@ table.tt tr:last-child td{border-bottom:none}
   .cmp-hd-cell,.cmp-cell{padding:7px 6px;font-size:11px}
 }
 
+
+/* ── CLEAN ONE-LINE LOCKED / RESULTS DESIGN ─────────────────────── */
+.mcard.result-card{
+  grid-template-columns:minmax(0,1fr) 260px minmax(0,1fr) 48px;
+}
+.result-center{
+  padding:8px 10px !important;
+  gap:5px !important;
+}
+.pred-line{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  flex-wrap:nowrap;
+  white-space:nowrap;
+  background:rgba(7,26,15,.72);
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:999px;
+  padding:6px 10px;
+}
+.pred-line.missing{
+  border-color:rgba(249,115,22,.28);
+  background:rgba(249,115,22,.06);
+}
+.pred-line .num{
+  font-family:'Roboto Mono',monospace;
+  font-size:17px;
+  font-weight:800;
+  color:var(--white);
+  line-height:1;
+}
+.pred-line .dash{color:var(--grey);font-weight:800}
+.status-chip{
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:999px;padding:2px 8px;font-size:9px;font-weight:900;
+  letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;line-height:1.4;
+}
+.status-chip.locked{background:rgba(107,138,118,.16);color:var(--grey);border:1px solid rgba(107,138,118,.35)}
+.status-chip.saved{background:rgba(34,197,94,.13);color:var(--green);border:1px solid rgba(34,197,94,.28)}
+.status-chip.missing{background:rgba(249,115,22,.14);color:var(--orange);border:1px solid rgba(249,115,22,.32)}
+.result-note{
+  width:100%;text-align:center;font-size:11px;line-height:1.2;white-space:nowrap;
+}
+.result-note.good{color:var(--green)}
+.result-note.bad{color:var(--red)}
+.result-note.gold{color:var(--gold)}
+.result-note.neutral{color:var(--grey)}
+.mcard.result-card.missing-card{border-color:rgba(249,115,22,.32);background:rgba(249,115,22,.025)}
+.mcard.result-card.played-card{border-color:rgba(59,130,246,.28)}
+.mcard.result-card.locked-card-ui{border-color:rgba(107,138,118,.26)}
+
+/* cleaner compare table cells */
+.cmp-mini{
+  display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;
+  min-height:34px;border-radius:999px;background:rgba(7,26,15,.55);
+  border:1px solid rgba(255,255,255,.06);padding:5px 8px;
+  font-family:'Roboto Mono',monospace;font-size:13px;font-weight:800;
+}
+.cmp-mini.missing{font-family:'Inter',sans-serif;color:var(--orange);border-color:rgba(249,115,22,.28);background:rgba(249,115,22,.06);font-size:10px;letter-spacing:.3px}
+.cmp-mini.hidden{font-family:'Inter',sans-serif;color:var(--grey);font-size:11px}
+.cmp-mini .tag{font-family:'Inter',sans-serif;font-size:9px;font-weight:900;border-radius:999px;padding:2px 6px}
+.cmp-mini.good{color:var(--green)}.cmp-mini.bad{color:var(--red)}.cmp-mini.gold{color:var(--gold)}.cmp-mini.blue{color:var(--blue)}
+@media(max-width:640px){
+  .mcard.result-card{grid-template-columns:minmax(0,1fr) 155px minmax(0,1fr) 34px}
+  .pred-line{gap:4px;padding:5px 6px}
+  .pred-line .num{font-size:14px}
+  .status-chip{font-size:8px;padding:2px 5px}
+  .result-note{font-size:9px;white-space:normal}
+}
+
+
+
+/* ── FINAL MATCH CARD ALIGNMENT: uniform one-line scoreboard design ── */
+#pred-list .mcard,
+#pred-list .mcard.result-card{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 300px minmax(0,1fr) 54px !important;
+  align-items:stretch !important;
+  min-height:92px !important;
+  margin-bottom:10px !important;
+  border-radius:14px !important;
+  overflow:hidden !important;
+  background:linear-gradient(90deg,rgba(11,32,21,.98),rgba(15,42,28,.96)) !important;
+  border:1px solid rgba(34,197,94,.28) !important;
+}
+#pred-list .mcard.saved{border-color:rgba(34,197,94,.45)!important;}
+#pred-list .mcard.missing-card{border-color:rgba(249,115,22,.38)!important;}
+#pred-list .mcard.played-card,
+#pred-list .mcard.locked-card-ui{border-color:rgba(107,138,118,.34)!important;opacity:1!important;pointer-events:auto!important;}
+#pred-list .tside{
+  padding:0 18px !important;
+  display:flex !important;
+  align-items:center !important;
+  min-width:0 !important;
+  background:rgba(7,26,15,.28) !important;
+}
+#pred-list .tside.away{justify-content:flex-end!important;text-align:right!important;}
+#pred-list .tname{
+  font-size:15px !important;
+  font-weight:800 !important;
+  color:var(--white) !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+#pred-list .sc-center,
+#pred-list .result-center{
+  background:rgba(7,26,15,.32) !important;
+  padding:12px 10px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:7px !important;
+}
+#pred-list .pred-line{
+  width:100% !important;
+  max-width:260px !important;
+  min-height:38px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:10px !important;
+  flex-wrap:nowrap !important;
+  white-space:nowrap !important;
+  background:rgba(7,26,15,.72) !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  border-radius:999px !important;
+  padding:6px 12px !important;
+}
+#pred-list .pred-line.missing{border-color:rgba(249,115,22,.35)!important;background:rgba(249,115,22,.07)!important;}
+#pred-list .pred-line.editable{border-color:rgba(34,197,94,.22)!important;background:rgba(7,26,15,.68)!important;}
+#pred-list .pred-line.editable.missing{border-color:rgba(249,115,22,.34)!important;background:rgba(249,115,22,.06)!important;}
+#pred-list .pred-line .num,
+#pred-list .pred-line .sc-in{
+  width:42px !important;
+  height:32px !important;
+  border-radius:8px !important;
+  font-family:'Roboto Mono',monospace !important;
+  font-size:18px !important;
+  font-weight:900 !important;
+  line-height:1 !important;
+  text-align:center !important;
+  color:var(--white) !important;
+  background:rgba(0,0,0,.22) !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+}
+#pred-list .pred-line .sc-in:focus{border-color:var(--gold)!important;background:rgba(15,42,28,.95)!important;}
+#pred-list .pred-line .dash,
+#pred-list .sc-sep{color:var(--grey)!important;font-size:17px!important;font-weight:900!important;}
+#pred-list .status-chip{flex-shrink:0!important;}
+#pred-list .result-note{
+  width:100% !important;
+  text-align:center !important;
+  font-size:12px !important;
+  line-height:1.2 !important;
+  white-space:nowrap !important;
+}
+#pred-list .grptag{
+  background:transparent !important;
+  color:var(--grey) !important;
+  font-size:11px !important;
+  font-weight:800 !important;
+  letter-spacing:.8px !important;
+}
+#pred-list .mcard > div:last-child{
+  background:rgba(15,42,28,.55) !important;
+  border-left:1px solid rgba(34,197,94,.18) !important;
+}
+@media(max-width:760px){
+  #pred-list .mcard,#pred-list .mcard.result-card{grid-template-columns:minmax(0,1fr) 155px minmax(0,1fr) 34px!important;min-height:84px!important;}
+  #pred-list .tside{padding:0 8px!important;}
+  #pred-list .tname{font-size:12px!important;}
+  #pred-list .pred-line{max-width:140px!important;gap:4px!important;padding:5px 6px!important;min-height:34px!important;}
+  #pred-list .pred-line .num,#pred-list .pred-line .sc-in{width:30px!important;height:28px!important;font-size:14px!important;}
+  #pred-list .result-note{font-size:9px!important;white-space:normal!important;}
+  #pred-list .status-chip{font-size:8px!important;padding:2px 5px!important;}
+}
+
 </style>
 
 <!-- EmailJS SDK - used for admin email reminders -->
@@ -521,8 +702,6 @@ table.tt tr:last-child td{border-bottom:none}
     emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
   }
 </script>
-<!-- EmailJS SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -3294,38 +3473,43 @@ function renderPredList() {
   startCD(activeStage);
   const stage = STAGES.find(s=>s.key===activeStage);
   if(!stage) return;
-  const locked = isLocked(activeStage);
+
+  const stageLocked = isLocked(activeStage);
   const preds = lp(currentUser);
   const actuals = la();
   const stMids = new Set(stage.mids);
   let matches = ALL.filter(m=>stMids.has(m[0]));
 
-  // For locked stages — only show 'all' and 'done'; pending makes no sense
-  if(locked && predFilt==='pending') {
-    // Override filter silently — show all
-  }
-  if(!locked) {
-    if(predFilt==='pending') matches = matches.filter(m=>{const p=preds[m[0]];return!p||p.hg===undefined});
-    if(predFilt==='done') matches = matches.filter(m=>{const p=preds[m[0]];return p&&p.hg!==undefined});
+  // Only allow pending/done filters while matches are still editable.
+  if(!stageLocked) {
+    if(predFilt==='pending') matches = matches.filter(m=>{
+      const p=preds[m[0]];
+      return !p || p.hg===undefined;
+    });
+    if(predFilt==='done') matches = matches.filter(m=>{
+      const p=preds[m[0]];
+      return p && p.hg!==undefined;
+    });
   }
 
   const list = document.getElementById('pred-list');
   list.innerHTML = '';
 
-  // Header for locked stage — explain it's read-only
-  if(locked) {
-    const pCount = stage.mids.filter(mid=>{const p=preds[mid];return p&&p.hg!==undefined}).length;
-    list.innerHTML += `<div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);
-      border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:var(--blue)">
-      👁 <strong>Read-only view</strong> — Deadline passed. Showing your ${pCount} prediction${pCount!==1?'s':''} for this stage.
-      ${pCount < stage.mids.length ? `<span style="color:var(--red);margin-left:6px">${stage.mids.length-pCount} not entered.</span>` : ''}
+  const enteredCount = stage.mids.filter(mid=>{const p=preds[mid];return p&&p.hg!==undefined}).length;
+  const missingCount = stage.mids.length - enteredCount;
+
+  if(stageLocked || missingCount) {
+    list.innerHTML += `<div style="background:${stageLocked?'rgba(59,130,246,.07)':'rgba(249,115,22,.06)'};border:1px solid ${stageLocked?'rgba(59,130,246,.22)':'rgba(249,115,22,.25)'};
+      border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:${stageLocked?'var(--blue)':'var(--orange)'};line-height:1.45">
+      ${stageLocked?'🔒 <strong>Read-only view</strong> — played/started matches are locked and cannot be edited.':'⏳ <strong>Pending predictions</strong>'}
+      <br>${enteredCount}/${stage.mids.length} entered${missingCount?` · <strong>${missingCount} not entered</strong>`:''}
     </div>`;
   }
 
   if(!matches.length){
     list.innerHTML += `<p style="color:var(--grey);padding:16px 0">${
-      !locked && predFilt==='done'?'No predictions entered yet.':
-      !locked && predFilt==='pending'?'All done for this stage! 🎉':'No matches to show.'
+      !stageLocked && predFilt==='done'?'No predictions entered yet.':
+      !stageLocked && predFilt==='pending'?'All done for this stage! 🎉':'No matches to show.'
     }</p>`;
     return;
   }
@@ -3343,34 +3527,45 @@ function renderPredList() {
       const agv = p.ag!==undefined?p.ag:'';
       const saved = hgv!==''&&agv!=='';
       const hasResult = a && a.hg!==undefined;
+      const matchClosed = stageLocked || isPredictionLockedForMatch(mid) || hasResult;
+      const timeLeft = matchTimeLeft(mid);
 
-      if(locked) {
-        // Read-only display — no inputs
-        const scoreTxt = saved
-          ? `<div style="display:flex;align-items:center;gap:6px">
-              <span style="font-family:'Roboto Mono',monospace;font-size:17px;font-weight:700;color:var(--gold)">${hgv}</span>
-              <span style="color:var(--grey)">–</span>
-              <span style="font-family:'Roboto Mono',monospace;font-size:17px;font-weight:700;color:var(--gold)">${agv}</span>
-            </div>`
-          : `<span style="color:var(--grey);font-style:italic;font-size:12px">Not entered</span>`;
-
-        // Score comparison if result available
-        let resultComp = '';
-        if(hasResult) {
-          const pr = hgv>agv?'H':hgv<agv?'A':'D';
-          const ar = a.hg>a.ag?'H':a.hg<a.ag?'A':'D';
-          const exact = +hgv===+a.hg && +agv===+a.ag;
-          const correct = pr===ar;
-          resultComp = `<div style="font-size:11px;margin-top:3px;color:${exact?'var(--gold)':correct?'var(--green)':'var(--red)'}">
-            ${exact?'🎯 Exact!':correct?'✓ Correct result':'✗ Wrong'} · Actual: ${a.hg}–${a.ag}
+      if(matchClosed) {
+        let predLine = '';
+        if(saved){
+          predLine = `<div class="pred-line">
+            <span class="num">${hgv}</span><span class="dash">–</span><span class="num">${agv}</span>
+            <span class="status-chip locked">Locked</span>
+          </div>`;
+        } else {
+          predLine = `<div class="pred-line missing">
+            <span class="status-chip missing">Not entered</span>
+            <span class="status-chip locked">Locked</span>
           </div>`;
         }
 
-        list.innerHTML += `<div class="mcard${hasResult?' has-result':''}" style="opacity:1;pointer-events:auto">
+        let resultNote = '';
+        if(hasResult) {
+          if(saved) {
+            const pr = +hgv>+agv?'H':+hgv<+agv?'A':'D';
+            const ar = +a.hg>+a.ag?'H':+a.hg<+a.ag?'A':'D';
+            const exact = +hgv===+a.hg && +agv===+a.ag;
+            const correct = pr===ar;
+            resultNote = `<div class="result-note ${exact?'gold':correct?'good':'bad'}">
+              ${exact?'🎯 Exact score':correct?'✓ Correct result':'✗ Wrong result'} · Actual ${a.hg}–${a.ag}
+            </div>`;
+          } else {
+            resultNote = `<div class="result-note bad">No prediction entered · Actual ${a.hg}–${a.ag}</div>`;
+          }
+        } else {
+          resultNote = `<div class="result-note neutral">Match started/closed · prediction locked</div>`;
+        }
+
+        list.innerHTML += `<div class="mcard result-card locked-card-ui ${saved?'saved':'missing-card'} ${hasResult?'played-card has-result':''}" id="card-${mid}">
           <div class="tside"><div class="tname">${home}</div></div>
-          <div class="sc-center" style="min-height:54px">
-            ${scoreTxt}
-            ${resultComp}
+          <div class="sc-center result-center">
+            ${predLine}
+            ${resultNote}
           </div>
           <div class="tside away"><div class="tname">${away}</div></div>
           <div style="background:var(--card2);padding:4px 10px;display:flex;align-items:center;justify-content:center">
@@ -3378,27 +3573,14 @@ function renderPredList() {
           </div>
         </div>`;
       } else {
-        // Editable input
-        // Show result comparison on editable cards too
-        let editResultComp = '';
-        if(hasResult && saved) {
-          const pr2 = +hgv>+agv?'H':+hgv<+agv?'A':'D';
-          const ar2 = +a.hg>+a.ag?'H':+a.hg<+a.ag?'A':'D';
-          const exact2 = +hgv===+a.hg && +agv===+a.ag;
-          const correct2 = pr2===ar2;
-          editResultComp = `<div style="font-size:11px;margin-top:3px;color:${exact2?'var(--gold)':correct2?'var(--green)':'var(--red)'}">
-            ${exact2?'🎯 Exact!':correct2?'✓ Correct':'✗ Wrong'} · Actual: ${a.hg}–${a.ag}
-          </div>`;
-        } else if(hasResult) {
-          editResultComp = `<div class="result-row">${a.hg} – ${a.ag}</div><div class="result-label">Actual</div>`;
-        }
-        list.innerHTML += `<div class="mcard${saved?' saved':''}${hasResult?' has-result':''}" id="card-${mid}">
+        let editResultComp = saved ? `<div class="result-note good">Saved${timeLeft?' · '+timeLeft+' left':''}</div>` : `<div class="result-note neutral" style="color:var(--orange)">Not entered${timeLeft?' · '+timeLeft+' left':''}</div>`;
+        list.innerHTML += `<div class="mcard result-card ${saved?'saved':'missing-card'}" id="card-${mid}">
           <div class="tside"><div class="tname">${home}</div></div>
-          <div class="sc-center">
-            <div class="sc-row">
+          <div class="sc-center result-center">
+            <div class="pred-line editable ${saved?'saved':'missing'}">
               <input type="number" class="sc-in" id="hg-${mid}" value="${hgv}" placeholder="–" min="0" max="20"
                 oninput="markChg('${mid}')" onblur="autoSave('${mid}')">
-              <span class="sc-sep">–</span>
+              <span class="dash">–</span>
               <input type="number" class="sc-in" id="ag-${mid}" value="${agv}" placeholder="–" min="0" max="20"
                 oninput="markChg('${mid}')" onblur="autoSave('${mid}')">
             </div>
@@ -4303,7 +4485,7 @@ function renderCompare(){
       const isAuto=act&&act.source&&act.source!=='manual';
       const row=document.createElement('div');
       row.className='cmp-data-row';
-      let html=`<div class="cmp-cell match" style="font-size:11px">${home} v ${away}</div>`;
+      let html=`<div class="cmp-cell match" style="font-size:11px;display:flex;flex-direction:column;gap:2px"><strong style="color:var(--white)">${home}</strong><span style="color:var(--grey)">v</span><strong style="color:var(--white)">${away}</strong></div>`;
 
       cmpUsers.forEach(u=>{
         const p=allPreds[u][mid];
@@ -4311,14 +4493,14 @@ function renderCompare(){
         if(!canSee){
           if(u===currentUser){
             html+=p&&p.hg!==undefined
-              ?`<div class="cmp-cell" style="text-align:center;font-family:'Roboto Mono',monospace;font-size:13px;color:var(--gold)">${p.hg}–${p.ag}</div>`
-              :`<div class="cmp-cell" style="text-align:center;color:var(--grey);font-size:11px">–</div>`;
+              ?`<div class="cmp-cell"><div class="cmp-mini gold">${p.hg}–${p.ag}<span class="tag" style="color:var(--grey)">Your pick</span></div></div>`
+              :`<div class="cmp-cell"><div class="cmp-mini missing">NOT ENTERED</div></div>`;
           } else {
-            html+=`<div class="cmp-cell" style="text-align:center;color:var(--grey);font-size:11px" title="Unlocks when actual score is recorded">🔒</div>`;
+            html+=`<div class="cmp-cell"><div class="cmp-mini hidden" title="Unlocks when actual score is recorded">🔒 Hidden</div></div>`;
           }
         } else {
           if(!p||p.hg===undefined){
-            html+=`<div class="cmp-cell" style="text-align:center;color:var(--grey);font-size:11px;font-style:italic">–</div>`;
+            html+=`<div class="cmp-cell"><div class="cmp-mini missing">NOT ENTERED</div></div>`;
           } else {
             let cls='';
             if(act&&act.hg!==undefined){
@@ -4328,7 +4510,7 @@ function renderCompare(){
               else if(pr===ar)cls='cmp-ok';
               else cls='cmp-no';
             }
-            html+=`<div class="cmp-cell ${cls}" style="text-align:center;font-family:'Roboto Mono',monospace;font-size:13px">${p.hg}–${p.ag}</div>`;
+            html+=`<div class="cmp-cell"><div class="cmp-mini ${cls==='cmp-exact'?'gold':cls==='cmp-ok'?'good':cls==='cmp-no'?'bad':''}">${p.hg}–${p.ag}</div></div>`;
           }
         }
       });
@@ -4336,8 +4518,8 @@ function renderCompare(){
       const actVal=act?`${act.hg}–${act.ag}`:'';
       html+=`<div class="cmp-cell" style="text-align:center">
         ${actVal
-          ? `<div style="display:flex;align-items:center;justify-content:center;gap:4px;font-family:'Roboto Mono',monospace;color:var(--blue);font-weight:600">${actVal}${isAuto?'<span class="auto-tag">AUTO</span>':''}</div>`
-          : `<span style="color:var(--grey);font-size:11px">Waiting for live result</span>`}
+          ? `<div class="cmp-mini blue">${actVal}${isAuto?'<span class="auto-tag">AUTO</span>':''}</div>`
+          : `<div class="cmp-mini hidden">Waiting result</div>`}
       </div>`;
       row.innerHTML=html;
       tbl.appendChild(row);
