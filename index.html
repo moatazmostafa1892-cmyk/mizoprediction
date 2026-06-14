@@ -2892,6 +2892,42 @@ function refreshCounts() {
   rebuildUserModalList();
 }
 
+async function runMatchFix() {
+  const btn = document.getElementById('fix-btn');
+  if(btn) { btn.textContent='⏳ Fixing...'; btn.disabled=true; }
+  try {
+    let fixed = 0;
+    for(const u of getAllUsers()) {
+      const key = fbKey(u.name);
+      const up = Object.assign({}, lp(u.name));
+      const old9  = up['M009'] ? {...up['M009']} : null;
+      const old10 = up['M010'] ? {...up['M010']} : null;
+      const old11 = up['M011'] ? {...up['M011']} : null;
+      if(!old9 && !old10 && !old11) continue;
+      const updated = Object.assign({}, up);
+      // old M010 (was Germany pred) → M009 (Germany slot)
+      // old M011 (was Netherlands pred) → M010 (Netherlands slot)
+      // old M009 (was IvoryCoast pred) → M011 (IvoryCoast slot)
+      if(old10) updated['M009'] = old10; else delete updated['M009'];
+      if(old11) updated['M010'] = old11; else delete updated['M010'];
+      if(old9)  updated['M011'] = old9;  else delete updated['M011'];
+      await fbSet(`predictions/${key}`, updated);
+      _cache[`pred_${u.name}`] = updated;
+      fixed++;
+      console.log(`Fixed ${u.name}`);
+    }
+    await fbSet('_fixes/match_swap_v1', true);
+    if(btn) btn.style.display = 'none';
+    showToast(`✅ Fixed ${fixed} users!`);
+    renderDashboard(); updateHeroStats();
+    if(document.getElementById('predictions')?.classList.contains('act')) renderPreds();
+    if(document.getElementById('compare')?.classList.contains('act')) renderCompare();
+  } catch(e) {
+    showToast('❌ Failed: ' + e.message);
+    if(btn) { btn.textContent='🔧 Fix Preds'; btn.disabled=false; }
+  }
+}
+
 function finishLogin(name, color) {
   currentUser = name;
   document.getElementById('user-pill').textContent = `▶ ${name}`;
@@ -2900,6 +2936,12 @@ function finishLogin(name, color) {
   if(adminBtn) adminBtn.style.display = isAdmin(name) ? '' : 'none';
   const emailBtn = document.getElementById('email-btn');
   if(emailBtn) emailBtn.style.display = isAdmin(name) ? '' : 'none';
+  const fixBtn = document.getElementById('fix-btn');
+  if(fixBtn && isAdmin(name)) {
+    fbGet('_fixes/match_swap_v1').then(done => {
+      fixBtn.style.display = done ? 'none' : '';
+    }).catch(() => { fixBtn.style.display = ''; });
+  }
   loadPredictions(name).then(() => {
     updateHeroStats();
     renderDashboard();
@@ -3328,7 +3370,6 @@ function renderPredList() {
           <div class="sc-center" style="min-height:54px">
             ${scoreTxt}
             ${resultComp}
-            ${hasResult?`<div style="font-size:9px;color:var(--grey);letter-spacing:1px;text-transform:uppercase;margin-top:1px">Actual: ${a.hg}–${a.ag}</div>`:''}
           </div>
           <div class="tside away"><div class="tname">${away}</div></div>
           <div style="background:var(--card2);padding:4px 10px;display:flex;align-items:center;justify-content:center">
@@ -3337,6 +3378,19 @@ function renderPredList() {
         </div>`;
       } else {
         // Editable input
+        // Show result comparison on editable cards too
+        let editResultComp = '';
+        if(hasResult && saved) {
+          const pr2 = +hgv>+agv?'H':+hgv<+agv?'A':'D';
+          const ar2 = +a.hg>+a.ag?'H':+a.hg<+a.ag?'A':'D';
+          const exact2 = +hgv===+a.hg && +agv===+a.ag;
+          const correct2 = pr2===ar2;
+          editResultComp = `<div style="font-size:11px;margin-top:3px;color:${exact2?'var(--gold)':correct2?'var(--green)':'var(--red)'}">
+            ${exact2?'🎯 Exact!':correct2?'✓ Correct':'✗ Wrong'} · Actual: ${a.hg}–${a.ag}
+          </div>`;
+        } else if(hasResult) {
+          editResultComp = `<div class="result-row">${a.hg} – ${a.ag}</div><div class="result-label">Actual</div>`;
+        }
         list.innerHTML += `<div class="mcard${saved?' saved':''}${hasResult?' has-result':''}" id="card-${mid}">
           <div class="tside"><div class="tname">${home}</div></div>
           <div class="sc-center">
@@ -3347,7 +3401,7 @@ function renderPredList() {
               <input type="number" class="sc-in" id="ag-${mid}" value="${agv}" placeholder="–" min="0" max="20"
                 oninput="markChg('${mid}')" onblur="autoSave('${mid}')">
             </div>
-            ${hasResult?`<div class="result-row">${a.hg} – ${a.ag}</div><div class="result-label">Actual</div>`:''}
+            ${editResultComp}
           </div>
           <div class="tside away"><div class="tname">${away}</div></div>
           <div style="background:var(--card2);padding:4px 10px;display:flex;align-items:center;justify-content:center">
