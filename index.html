@@ -2586,9 +2586,9 @@ async function saveEmails(){
 
 function emailJsReady(){
   return window.emailjs
-    && EMAILJS_PUBLIC_KEY !== 'wcsp6fzLmJ7aMeIJQ'
-    && EMAILJS_SERVICE_ID !== 'service_szyc7ed'
-    && EMAILJS_TEMPLATE_ID !== 'template_m8gupbn';
+    && !!EMAILJS_PUBLIC_KEY
+    && !!EMAILJS_SERVICE_ID
+    && !!EMAILJS_TEMPLATE_ID;
 }
 
 async function sendEmailToPlayer(name){
