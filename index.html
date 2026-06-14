@@ -819,8 +819,8 @@ const GM = [
   ['M006','MD1','D','2026-06-13','Australia','Turkey','BC Place','Vancouver','2026-06-13T20:00:00Z'],
   ['M007','MD1','C','2026-06-13','Brazil','Morocco','MetLife Stadium','East Rutherford','2026-06-13T23:00:00Z'],
   ['M008','MD1','B','2026-06-13','Qatar','Switzerland','Levi\'s Stadium','San Francisco','2026-06-14T02:00:00Z'],
-  ['M009','MD1','E','2026-06-14','Ivory Coast','Ecuador','Lincoln Financial Field','Philadelphia','2026-06-14T17:00:00Z'],
-  ['M010','MD1','E','2026-06-14','Germany','Curaçao','NRG Stadium','Houston','2026-06-14T20:00:00Z'],
+  ['M009','MD1','E','2026-06-14','Germany','Curaçao','NRG Stadium','Houston','2026-06-14T17:00:00Z'],
+  ['M010','MD1','E','2026-06-14','Ivory Coast','Ecuador','Lincoln Financial Field','Philadelphia','2026-06-14T20:00:00Z'],
   ['M011','MD1','F','2026-06-14','Netherlands','Japan','AT&T Stadium','Dallas','2026-06-14T23:00:00Z'],
   ['M012','MD1','F','2026-06-14','Sweden','Tunisia','Estadio Monterrey','Monterrey','2026-06-15T02:00:00Z'],
   ['M013','MD1','H','2026-06-15','Saudi Arabia','Uruguay','Hard Rock Stadium','Miami','2026-06-15T17:00:00Z'],
@@ -2902,19 +2902,24 @@ function renderPredList() {
         const tLeft = !matchLocked ? matchTimeLeft(mid) : null;
 
         if(matchLocked && !hasResult) {
-          // Match has kicked off but no result yet — show as locked read-only
+          // Match has kicked off but no result yet — show prediction (locked, read-only)
           const scoreTxt = saved
             ? `<div style="display:flex;align-items:center;gap:6px">
                 <span style="font-family:'Roboto Mono',monospace;font-size:17px;font-weight:700;color:var(--gold)">${hgv}</span>
                 <span style="color:var(--grey)">–</span>
                 <span style="font-family:'Roboto Mono',monospace;font-size:17px;font-weight:700;color:var(--gold)">${agv}</span>
               </div>`
-            : `<span style="color:var(--grey);font-style:italic;font-size:11px">Not entered</span>`;
-          list.innerHTML += `<div class="mcard locked-card" style="opacity:.7;pointer-events:none" id="card-${mid}">
+            : `<div style="display:flex;align-items:center;gap:6px">
+                <span style="font-family:'Roboto Mono',monospace;font-size:17px;color:var(--grey)">?</span>
+                <span style="color:var(--grey)">–</span>
+                <span style="font-family:'Roboto Mono',monospace;font-size:17px;color:var(--grey)">?</span>
+              </div>`;
+          list.innerHTML += `<div class="mcard${saved?' saved':''}" style="border-color:rgba(249,115,22,.35)" id="card-${mid}">
             <div class="tside"><div class="tname">${home}</div></div>
             <div class="sc-center">
               ${scoreTxt}
-              <div style="font-size:9px;color:var(--orange);letter-spacing:1px;text-transform:uppercase;margin-top:3px">🔒 In Progress</div>
+              <div style="font-size:9px;color:var(--orange);letter-spacing:1px;text-transform:uppercase;margin-top:3px">🔴 Live</div>
+              ${!saved?`<div style="font-size:9px;color:var(--red);margin-top:1px">Not entered</div>`:''}
             </div>
             <div class="tside away"><div class="tname">${away}</div></div>
             <div style="background:var(--card2);padding:4px 10px;display:flex;align-items:center;justify-content:center">
