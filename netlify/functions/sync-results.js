@@ -18,7 +18,7 @@ const LOOKUP = {
   "Mexico|South Africa":"M001","South Korea|Czech Republic":"M002",
   "Canada|Bosnia and Herzegovina":"M003","United States|Paraguay":"M004",
   "Haiti|Scotland":"M005","Australia|Turkey":"M006","Brazil|Morocco":"M007",
-  "Qatar|Switzerland":"M008","Ivory Coast|Ecuador":"M009","Germany|Curaçao":"M010",
+  "Qatar|Switzerland":"M008","Germany|Curaçao":"M009","Ivory Coast|Ecuador":"M010",
   "Netherlands|Japan":"M011","Sweden|Tunisia":"M012","Saudi Arabia|Uruguay":"M013",
   "Spain|Cape Verde":"M014","Iran|New Zealand":"M015","Belgium|Egypt":"M016",
   "France|Senegal":"M017","Iraq|Norway":"M018","Argentina|Algeria":"M019",
