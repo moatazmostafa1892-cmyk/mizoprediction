@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>⚽ WC 2026 Predictions</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -290,6 +291,14 @@ table.tt tr:last-child td{border-bottom:none}
 .auto-tag{font-size:9px;background:rgba(59,130,246,.15);color:var(--blue);padding:1px 5px;border-radius:6px;font-weight:600;white-space:nowrap}
 
 /* TOAST */
+#reminder-banner{display:none;position:fixed;top:50px;left:0;right:0;z-index:190;
+  background:linear-gradient(90deg,#7c2d00,#c2410c);border-bottom:2px solid #f97316;
+  padding:10px 60px 10px 16px;text-align:center;animation:bannerPulse 2s infinite}
+@keyframes bannerPulse{0%,100%{opacity:1}50%{opacity:.85}}
+#reminder-banner .rb-text{color:#fff;font-size:13px;font-weight:600}
+#reminder-banner .rb-text span{color:#fbbf24}
+.rb-close{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:#fff;font-size:18px;cursor:pointer;opacity:.7}
 .toast{position:fixed;bottom:24px;right:24px;background:#1a5c38;border:1px solid #22c55e;
   color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:999;
   transform:translateY(80px);opacity:0;transition:.3s;pointer-events:none}
@@ -499,6 +508,19 @@ table.tt tr:last-child td{border-bottom:none}
 }
 
 </style>
+
+<!-- EmailJS SDK - used for admin email reminders -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  // Replace these three values from your EmailJS account before publishing.
+  const EMAILJS_PUBLIC_KEY = "wcsp6fzLmJ7aMeIJQ";
+  const EMAILJS_SERVICE_ID = "service_szyc7ed";
+  const EMAILJS_TEMPLATE_ID = "template_m8gupbn";
+
+  if (window.emailjs && EMAILJS_PUBLIC_KEY) {
+    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+  }
+</script>
 </head>
 <body>
 
@@ -540,6 +562,13 @@ table.tt tr:last-child td{border-bottom:none}
         <div class="auth-label">Choose a Username</div>
         <input class="login-input" id="signup-username" type="text" placeholder="Your name (e.g. Ahmed)"
           maxlength="30" autocomplete="off"
+          oninput="clearAuthErr('signup')"
+          onkeydown="if(event.key==='Enter')document.getElementById('signup-pin').focus()">
+      </div>
+      <div>
+        <div class="auth-label">Email Address</div>
+        <input class="login-input" id="signup-email" type="email" placeholder="you@email.com"
+          maxlength="80" autocomplete="email"
           oninput="clearAuthErr('signup')"
           onkeydown="if(event.key==='Enter')document.getElementById('signup-pin').focus()">
       </div>
@@ -632,10 +661,54 @@ table.tt tr:last-child td{border-bottom:none}
   <div class="nav-right">
     <div id="user-pill" onclick="openUserModal()">Select User</div>
     <button id="admin-btn" onclick="openManageUsers()" style="display:none;background:rgba(245,197,24,.15);border:1px solid rgba(245,197,24,.3);color:var(--gold);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">👑 Users</button>
+    <button id="email-btn" onclick="openEmailModal()" style="display:none;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#3b82f6;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">📧 Remind</button>
   </div>
 </nav>
 
 
+<!-- REMINDER BANNER -->
+<div id="reminder-banner" style="position:relative">
+  <span class="rb-text" id="reminder-text">⚠️ Missing predictions!</span>
+  <button class="rb-close" onclick="document.getElementById('reminder-banner').style.display='none'">✕</button>
+</div>
+<!-- EMAIL REMINDER MODAL -->
+<div id="email-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:700;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 32px;width:500px;max-width:94vw;max-height:85vh;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#3b82f6;margin:0">📧 Email Reminders</h2>
+      <button onclick="closeEmailModal()" style="background:var(--card2);border:1px solid var(--border);color:var(--grey);border-radius:8px;padding:5px 12px;cursor:pointer">✕</button>
+    </div>
+
+    <!-- AUTO MAIL STATUS - shows latest automatic reminder result from Firebase -->
+    <div id="auto-reminder-status" style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--grey);line-height:1.45">
+      🤖 Auto mail status: checking...
+    </div>
+
+    <div style="font-size:12px;color:var(--grey)">
+      Enter player emails, select who should receive a reminder, then send to selected players or all players with missing predictions.
+    </div>
+    <div id="email-player-list" style="overflow-y:auto;display:flex;flex-direction:column;gap:8px;max-height:50vh"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button onclick="sendEmailSelected()" style="flex:1;min-width:145px;padding:10px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">📧 Send Selected</button>
+      <button onclick="sendEmailAllMissing()" style="flex:1;min-width:145px;padding:10px;background:#1a5c38;color:#fff;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">📨 Send All Missing</button>
+      <button onclick="saveEmails()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- EMAIL CAPTURE POPUP FOR EXISTING USERS -->
+<div id="email-capture-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:760;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:26px 30px;width:400px;max-width:92vw">
+    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:25px;color:#3b82f6;margin:0 0 6px">📧 Add Your Email</h2>
+    <p style="color:var(--grey);font-size:13px;margin-bottom:16px;line-height:1.45">Add your email once so you can receive prediction deadline reminders.</p>
+    <input class="login-input" id="email-capture-input" type="email" placeholder="you@email.com" maxlength="80" autocomplete="email"
+      oninput="document.getElementById('email-capture-err').textContent=''"
+      onkeydown="if(event.key==='Enter')saveCurrentUserEmail()">
+    <div class="auth-err" id="email-capture-err" style="margin-top:8px"></div>
+    <button class="auth-btn" onclick="saveCurrentUserEmail()" style="margin-top:6px">Save Email</button>
+    <button class="auth-btn secondary" onclick="skipCurrentUserEmailPrompt()">Skip</button>
+  </div>
+</div>
 <!-- ══ CELEBRATION OVERLAY ════════════════════════════════════════ -->
 <canvas id="confetti-canvas"></canvas>
 <div id="celebration">
@@ -1480,6 +1553,7 @@ function applySnapshot(all) {
 function refreshUI() {
   rebuildUserModalList();
   renderDashboard();
+  updateReminderBanner();
   if(currentUser) {
     if(document.getElementById('groups').classList.contains('act')) renderGroups();
     if(document.getElementById('compare').classList.contains('act')) renderCompare();
@@ -1616,21 +1690,16 @@ function normalizeApiResultsToActuals(payload, source='api'){
 }
 
 async function fetchAllResults() {
-  // Try worldcup26.ir first — returns finished:TRUE for completed matches
   try {
-    const r = await fetchResultsFromSource('https://worldcup26.ir/get/games', parseWorldcup26);
-    if(r && Object.keys(r).length > 0) return r;
+    const r = await fetch('/.netlify/functions/sync-results', {
+      cache: 'no-cache', signal: AbortSignal.timeout(20000)
+    });
+    const data = await r.json();
+    if(data && data.ok && data.updates && Object.keys(data.updates).length > 0)
+      return data.updates;
   } catch(e) {}
-
-  // Fallback: wc2026api.com
-  try {
-    const r = await fetchResultsFromSource('https://api.wc2026api.com/matches', parseWC2026Api);
-    if(r && Object.keys(r).length > 0) return r;
-  } catch(e) {}
-
   return {};
 }
-
 async function syncResultToFirebase(results) {
   if(!results || !Object.keys(results).length) return;
   let changed = 0;
@@ -1755,20 +1824,19 @@ function stageForMatch(mid) {
   if(m[1] === '3P') return 'Final';
   return m[1];
 }
-// Lock each match individually at its own kickoff time
 function isMatchLocked(mid) {
-  const m = ALL.find(x => x[0] === mid);
+  const m = ALL.find(x=>x[0]===mid);
   if(!m) return true;
   return Date.now() >= new Date(m[8]).getTime();
 }
 function matchTimeLeft(mid) {
-  const m = ALL.find(x => x[0] === mid);
+  const m = ALL.find(x=>x[0]===mid);
   if(!m) return null;
   const ms = new Date(m[8]).getTime() - Date.now();
-  if(ms <= 0) return null;
-  const h = Math.floor(ms/3600000), min = Math.floor((ms%3600000)/60000);
-  if(h >= 24) return `${Math.floor(h/24)}d ${h%24}h`;
-  if(h > 0) return `${h}h ${min}m`;
+  if(ms<=0) return null;
+  const h=Math.floor(ms/3600000), min=Math.floor((ms%3600000)/60000);
+  if(h>=24) return `${Math.floor(h/24)}d ${h%24}h`;
+  if(h>0) return `${h}h ${min}m`;
   return `${min}m`;
 }
 function isPredictionLockedForMatch(mid) {
@@ -2043,12 +2111,16 @@ async function doSignup() {
   const username   = (document.getElementById('signup-username').value || '').trim();
   const pin        = (document.getElementById('signup-pin').value || '').trim();
   const pinConfirm = (document.getElementById('signup-pin-confirm').value || '').trim();
+  const email      = (document.getElementById('signup-email').value || '').trim();
 
   if(!username || username.length < 2) {
     setAuthErr('signup', 'Username must be at least 2 characters'); return;
   }
   if(!/^[A-Za-z0-9 _-]+$/.test(username)) {
     setAuthErr('signup', 'Use only letters, numbers, spaces, _ or -'); return;
+  }
+  if(!isValidEmail(email)) {
+    setAuthErr('signup', 'Please enter a valid email address'); return;
   }
   if(pin.length !== 4) {
     setAuthErr('signup', 'PIN must be exactly 4 digits'); return;
@@ -2095,6 +2167,15 @@ async function doSignup() {
     // Write ONLY this user. Do not PUT the whole custom_users object,
     // because that can wipe other players if this browser has stale data.
     await fbSet(`custom_users/${fbKey(username)}`, newUser);
+
+    // Save email for reminders
+    const emailKey = fbKey(username);
+    try {
+      _playerEmails[emailKey] = email;
+      await fbSet(`player_emails/${emailKey}`, email);
+    } catch(emailErr) {
+      console.warn('Could not save signup email:', emailErr);
+    }
 
     // Set PIN
     setPINHash(username, pin);
@@ -2306,6 +2387,361 @@ document.addEventListener('keydown', e => {
 // ── DYNAMIC USERS ───────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
 // Built-in users + custom users stored in Firebase
+function getNextDeadline() {
+  // Find the next upcoming match deadline across all stages
+  const now = Date.now();
+  let earliest = null;
+  for(const s of STAGES) {
+    // Find unlocked matches in this stage
+    const upcoming = s.mids
+      .map(mid => ALL.find(m=>m[0]===mid))
+      .filter(m => m && new Date(m[8]).getTime() > now)
+      .sort((a,b) => new Date(a[8]) - new Date(b[8]));
+    if(!upcoming.length) continue;
+    const first = upcoming[0];
+    const day = first[3];
+    const candidate = {
+      deadline: first[8],
+      date: day,
+      label: new Date(day).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long'}),
+      mids: upcoming.filter(m=>m[3]===day).map(m=>m[0])
+    };
+    if(!earliest || new Date(candidate.deadline) < new Date(earliest.deadline)) {
+      earliest = candidate;
+    }
+  }
+  return earliest;
+}
+function updateReminderBanner() {
+  const banner=document.getElementById('reminder-banner');
+  const text=document.getElementById('reminder-text');
+  if(!banner||!currentUser){if(banner)banner.style.display='none';return;}
+  const next=getNextDeadline();
+  if(!next){banner.style.display='none';return;}
+  const preds=lp(currentUser);
+  const missing=next.mids.filter(mid=>{const p=preds[mid];return!isMatchLocked(mid)&&(!p||p.hg===undefined);});
+  if(!missing.length){banner.style.display='none';return;}
+  const tl=timeLeft(next.deadline);
+  if(!tl||tl.diff>86400000*2){banner.style.display='none';return;}
+  const urgency=tl.diff<3600000?'🚨':tl.diff<21600000?'⚡':'⚠️';
+  const ts=tl.d>0?`${tl.d}d ${tl.h}h`:tl.h>0?`${tl.h}h ${tl.m}m`:`${tl.m}m`;
+  text.innerHTML=`${urgency} <span>${missing.length} prediction${missing.length!==1?'s':''} missing</span> · Deadline in <span>${ts}</span> · <a href="#" onclick="goTo('predictions',document.querySelectorAll('.nav-btn')[2]);document.getElementById('reminder-banner').style.display='none';return false;" style="color:#fbbf24;text-decoration:underline">Enter now →</a>`;
+  banner.style.display='block';
+}
+function isValidEmail(email){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+}
+
+let _emailPromptUser = null;
+
+function getEmailPromptSkipKey(name){
+  return `email_prompt_skipped_${fbKey(name)}`;
+}
+
+async function loadPlayerEmails(){
+  try {
+    const saved = await fbGet('player_emails');
+    _playerEmails = saved || {};
+  } catch(e) {
+    _playerEmails = {};
+  }
+  return _playerEmails;
+}
+
+function userEmailFromCache(name){
+  const key = fbKey(name);
+  return (_playerEmails[key] || _playerEmails[name] || '').trim();
+}
+
+async function maybePromptForEmail(name){
+  if(!name) return;
+  await loadPlayerEmails();
+  if(userEmailFromCache(name)) return;
+  if(localStorage.getItem(getEmailPromptSkipKey(name)) === '1') return;
+  _emailPromptUser = name;
+  const input = document.getElementById('email-capture-input');
+  const err = document.getElementById('email-capture-err');
+  if(err) err.textContent = '';
+  if(input) input.value = '';
+  const overlay = document.getElementById('email-capture-overlay');
+  if(overlay) overlay.style.display = 'flex';
+  setTimeout(() => input && input.focus(), 50);
+}
+
+async function saveCurrentUserEmail(){
+  const name = _emailPromptUser || currentUser;
+  const input = document.getElementById('email-capture-input');
+  const err = document.getElementById('email-capture-err');
+  const email = (input ? input.value : '').trim();
+  if(!isValidEmail(email)){
+    if(err) err.textContent = 'Please enter a valid email address';
+    return;
+  }
+  const key = fbKey(name);
+  _playerEmails[key] = email;
+  try {
+    await fbSet(`player_emails/${key}`, email);
+    localStorage.removeItem(getEmailPromptSkipKey(name));
+    const overlay = document.getElementById('email-capture-overlay');
+    if(overlay) overlay.style.display = 'none';
+    showToast('✅ Email saved');
+  } catch(e) {
+    if(err) err.textContent = 'Could not save email. Please try again.';
+  }
+}
+
+function skipCurrentUserEmailPrompt(){
+  const name = _emailPromptUser || currentUser;
+  if(name) localStorage.setItem(getEmailPromptSkipKey(name), '1');
+  const overlay = document.getElementById('email-capture-overlay');
+  if(overlay) overlay.style.display = 'none';
+}
+
+let _playerEmails = {};
+
+function emailDeadlineText(deadline){
+  if(!deadline) return 'soon';
+  const tl = timeLeft(deadline);
+  if(!tl) return 'soon';
+  return tl.d > 0 ? `${tl.d}d ${tl.h}h` : tl.h > 0 ? `${tl.h}h ${tl.m}m` : `${tl.m}m`;
+}
+
+function getMissingPredictionCount(name){
+  const next = getNextDeadline();
+  if(!next) return 0;
+  const preds = lp(name);
+  return next.mids.filter(mid => {
+    const p = preds[mid];
+    return !isMatchLocked(mid) && (!p || p.hg === undefined);
+  }).length;
+}
+
+function getEmailAddress(name){
+  const input = document.getElementById(`email-${fbKey(name)}`);
+  return (input ? input.value : userEmailFromCache(name)).trim();
+}
+
+async function openEmailModal(){
+  if(!isAdmin(currentUser)) return;
+  await loadPlayerEmails();
+  await loadAutoReminderStatus();
+  renderEmailPlayerList();
+  document.getElementById('email-overlay').style.display = 'flex';
+}
+
+async function loadAutoReminderStatus(){
+  const box = document.getElementById('auto-reminder-status');
+  if(!box) return;
+
+  box.style.background = 'rgba(59,130,246,.08)';
+  box.style.borderColor = 'rgba(59,130,246,.25)';
+  box.style.color = 'var(--grey)';
+  box.innerHTML = '🤖 Auto mail status: checking...';
+
+  try{
+    const status = await fbGet('auto_reminder_status');
+
+    if(!status || !status.lastRun){
+      box.style.background = 'rgba(249,115,22,.08)';
+      box.style.borderColor = 'rgba(249,115,22,.25)';
+      box.style.color = 'var(--orange)';
+      box.innerHTML = '🤖 Auto mail status<br>⏳ No automatic reminder has been sent yet.';
+      return;
+    }
+
+    const sentNames = Array.isArray(status.sent) ? status.sent : [];
+    const sentCount = Number(status.sentCount ?? sentNames.length ?? 0);
+    const errorCount = Number(status.errorCount ?? (Array.isArray(status.errors) ? status.errors.length : 0));
+    const lastRunText = new Date(status.lastRun).toLocaleString('en-GB');
+    const deadlineText = status.deadline || status.deadlineName || status.stage || '-';
+
+    if(errorCount > 0){
+      box.style.background = 'rgba(239,68,68,.08)';
+      box.style.borderColor = 'rgba(239,68,68,.25)';
+      box.style.color = 'var(--red)';
+      box.innerHTML = `
+        🤖 Auto mail status<br>
+        🔴 Last run had ${errorCount} error(s)<br>
+        📧 ${sentCount} email(s) sent<br>
+        📅 ${deadlineText}<br>
+        🕒 ${lastRunText}
+      `;
+      return;
+    }
+
+    if(sentCount > 0){
+      box.style.background = 'rgba(34,197,94,.08)';
+      box.style.borderColor = 'rgba(34,197,94,.25)';
+      box.style.color = 'var(--green)';
+      box.innerHTML = `
+        🤖 Auto mail status<br>
+        ✅ Last automatic reminder sent successfully<br>
+        📧 ${sentCount} email(s) sent${sentNames.length ? ': ' + sentNames.join(', ') : ''}<br>
+        📅 ${deadlineText}<br>
+        🕒 ${lastRunText}
+      `;
+      return;
+    }
+
+    box.style.background = 'rgba(249,115,22,.08)';
+    box.style.borderColor = 'rgba(249,115,22,.25)';
+    box.style.color = 'var(--orange)';
+    box.innerHTML = `
+      🤖 Auto mail status<br>
+      🟠 Last automatic check completed — no emails needed<br>
+      📅 ${deadlineText}<br>
+      🕒 ${lastRunText}
+    `;
+  }catch(e){
+    console.warn('Auto reminder status could not be loaded', e);
+    box.style.background = 'rgba(239,68,68,.08)';
+    box.style.borderColor = 'rgba(239,68,68,.25)';
+    box.style.color = 'var(--red)';
+    box.innerHTML = '🤖 Auto mail status<br>🔴 Could not load auto reminder status.';
+  }
+}
+
+function closeEmailModal(){
+  document.getElementById('email-overlay').style.display = 'none';
+}
+
+function buildEmailSubject(name, missing){
+  return missing > 0
+    ? `WC 2026 Predictions Reminder - ${missing} missing`
+    : 'WC 2026 Predictions - All set';
+}
+
+function buildEmailMessage(name, missing, timeStr){
+  if(missing === 0){
+    return `Hey ${name},\n\nYou're all set for WC 2026 — all predictions are done.\n\nGood luck!\n\nhttps://mizoprediction.netlify.app`;
+  }
+  return `Hey ${name},\n\nYou have ${missing} missing prediction${missing !== 1 ? 's' : ''} for WC 2026.\n\nDeadline: ${timeStr}\n\nPlease log in and complete them before the deadline:\nhttps://mizoprediction.netlify.app`;
+}
+
+function renderEmailPlayerList(){
+  const list = document.getElementById('email-player-list');
+  if(!list) return;
+
+  const next = getNextDeadline();
+  const timeStr = next ? emailDeadlineText(next.deadline) : 'soon';
+
+  list.innerHTML = getAllUsers().map(u => {
+    const name = u.name;
+    const key = fbKey(name);
+    const savedEmail = _playerEmails[key] || _playerEmails[name] || '';
+    const missing = getMissingPredictionCount(name);
+    const checked = missing > 0 ? 'checked' : '';
+
+    return `<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <input type="checkbox" id="email-select-${key}" ${checked} style="width:16px;height:16px;accent-color:#3b82f6">
+        <div style="width:28px;height:28px;border-radius:50%;background:${COLORS[name]||'#666'}20;color:${COLORS[name]||'#666'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">${name.charAt(0)}</div>
+        <div style="flex:1;font-weight:600;font-size:13px">${name}${missing>0?`<span style="color:var(--orange);font-size:11px;font-weight:400"> · ${missing} missing · ${timeStr}</span>`:'<span style="color:var(--green);font-size:11px;font-weight:400"> · ✅ done</span>'}</div>
+        <button onclick="sendEmailToPlayer('${name.replace(/'/g,"\\'")}')" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:5px 12px;font:600 12px Inter,sans-serif;cursor:pointer;flex-shrink:0">📧 Send</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:11px;color:var(--grey);flex-shrink:0">✉️</span>
+        <input type="email" id="email-${key}" placeholder="player@email.com" value="${savedEmail}" oninput="_playerEmails['${key}']=this.value" style="flex:1;background:var(--pitch);border:1px solid var(--border);color:var(--white);border-radius:6px;padding:5px 10px;font-size:12px;outline:none">
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function saveEmails(){
+  getAllUsers().forEach(u => {
+    const key = fbKey(u.name);
+    const email = getEmailAddress(u.name);
+    if(email) _playerEmails[key] = email;
+    else delete _playerEmails[key];
+  });
+
+  try {
+    await fbSet('player_emails', _playerEmails);
+    showToast('✅ Emails saved!');
+  } catch(e) {
+    showToast('❌ Failed to save emails');
+  }
+}
+
+function emailJsReady(){
+  return window.emailjs
+    && !!EMAILJS_PUBLIC_KEY
+    && !!EMAILJS_SERVICE_ID
+    && !!EMAILJS_TEMPLATE_ID;
+}
+
+async function sendEmailToPlayer(name){
+  await saveEmails();
+
+  if(!emailJsReady()){
+    showToast('⚠️ Add your EmailJS Public Key, Service ID, and Template ID first');
+    return false;
+  }
+
+  const email = getEmailAddress(name);
+  if(!email){
+    showToast(`⚠️ Missing email for ${name}`);
+    return false;
+  }
+
+  const next = getNextDeadline();
+  const missing = getMissingPredictionCount(name);
+  const timeStr = next ? emailDeadlineText(next.deadline) : 'soon';
+  const message = buildEmailMessage(name, missing, timeStr);
+
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: email,
+      player_email: email,
+      player_name: name,
+      missing_count: missing,
+      deadline: timeStr,
+      subject: buildEmailSubject(name, missing),
+      message: message,
+      website_url: 'https://mizoprediction.netlify.app'
+    });
+    showToast(`✅ Email sent to ${name}`);
+    return true;
+  } catch(e) {
+    console.error('EmailJS send failed:', e);
+    showToast(`❌ Failed to send email to ${name}`);
+    return false;
+  }
+}
+
+async function sendEmailSelected(){
+  await saveEmails();
+  let sent = 0;
+
+  for(const u of getAllUsers()){
+    const key = fbKey(u.name);
+    const selected = document.getElementById(`email-select-${key}`);
+    if(selected && selected.checked){
+      const ok = await sendEmailToPlayer(u.name);
+      if(ok) sent++;
+    }
+  }
+
+  if(sent === 0) showToast('No selected emails were sent');
+  else showToast(`📧 Sent ${sent} selected reminder${sent !== 1 ? 's' : ''}`);
+}
+
+async function sendEmailAllMissing(){
+  await saveEmails();
+  let sent = 0;
+
+  for(const u of getAllUsers()){
+    if(getMissingPredictionCount(u.name) > 0){
+      const ok = await sendEmailToPlayer(u.name);
+      if(ok) sent++;
+    }
+  }
+
+  if(sent === 0) showToast('No missing predictions or missing email addresses');
+  else showToast(`📨 Sent ${sent} missing reminder${sent !== 1 ? 's' : ''}`);
+}
+
+
 const BUILTIN_USERS = [
   {name:'Khairo', color:'#e85d04'},
   {name:'Moataz', color:'#3b82f6'},
@@ -2458,16 +2894,19 @@ function finishLogin(name, color) {
   currentUser = name;
   document.getElementById('user-pill').textContent = `▶ ${name}`;
   document.getElementById('user-pill').style.color = color;
-  // Show admin button for admins
   const adminBtn = document.getElementById('admin-btn');
   if(adminBtn) adminBtn.style.display = isAdmin(name) ? '' : 'none';
-  // Load this user's latest predictions from Firebase, then render
+  const emailBtn = document.getElementById('email-btn');
+  if(emailBtn) emailBtn.style.display = isAdmin(name) ? '' : 'none';
   loadPredictions(name).then(() => {
     updateHeroStats();
     renderDashboard();
     renderGroups();
     renderPreds();
     renderBracketPred();
+    updateReminderBanner();
+    setInterval(updateReminderBanner, 60000);
+    maybePromptForEmail(name);
   });
 }
 
@@ -2897,12 +3336,11 @@ function renderPredList() {
           </div>
         </div>`;
       } else {
-        // Check if this individual match is locked at kickoff
         const matchLocked = isMatchLocked(mid);
         const tLeft = !matchLocked ? matchTimeLeft(mid) : null;
 
         if(matchLocked && !hasResult) {
-          // Match has kicked off but no result yet — show prediction (locked, read-only)
+          // Match kicked off but no result yet — show prediction locked, 🔴 Live
           const scoreTxt = saved
             ? `<div style="display:flex;align-items:center;gap:6px">
                 <span style="font-family:'Roboto Mono',monospace;font-size:17px;font-weight:700;color:var(--gold)">${hgv}</span>
@@ -2939,7 +3377,7 @@ function renderPredList() {
                 <span style="font-family:'Roboto Mono',monospace;font-size:17px;font-weight:700;color:${exact?'var(--gold)':correct?'var(--green)':'var(--red)'}">${agv}</span>
               </div>`
             : `<span style="color:var(--grey);font-style:italic;font-size:12px">Not entered</span>`;
-          list.innerHTML += `<div class="mcard has-result" style="opacity:1;pointer-events:auto" id="card-${mid}">
+          list.innerHTML += `<div class="mcard has-result" id="card-${mid}">
             <div class="tside"><div class="tname">${home}</div></div>
             <div class="sc-center">
               ${scoreTxt}
@@ -2952,7 +3390,7 @@ function renderPredList() {
             </div>
           </div>`;
         } else {
-          // Match not yet started — fully editable
+          // Not yet started — fully editable with countdown
           const timeHint = tLeft ? `<div style="font-size:9px;color:var(--green);margin-top:2px">⏱ ${tLeft}</div>` : '';
           list.innerHTML += `<div class="mcard${saved?' saved':''}${hasResult?' has-result':''}" id="card-${mid}">
             <div class="tside"><div class="tname">${home}</div></div>
@@ -4205,6 +4643,18 @@ try {
         onReady:function(e){
           e.target.setVolume(35);
           updateLabel();
+          var played=false;
+          function tryPlay(){
+            if(played)return;played=true;
+            try{e.target.playVideo();}catch(err){}
+            document.removeEventListener('click',tryPlay);
+            document.removeEventListener('keydown',tryPlay);
+            document.removeEventListener('touchstart',tryPlay);
+          }
+          try{e.target.playVideo();}catch(err){}
+          document.addEventListener('click',tryPlay);
+          document.addEventListener('keydown',tryPlay);
+          document.addEventListener('touchstart',tryPlay);
         },
         onStateChange:function(e){
           if(e.data===YT.PlayerState.PLAYING){
