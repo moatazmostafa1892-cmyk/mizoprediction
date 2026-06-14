@@ -6,7 +6,7 @@
 <title>⚽ WC 2026 Predictions</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=a67HohdQXPl1BOQX_0CSg36ZB2jpspZ2wsSq0g_NwWNhGxHVEvKGbJrNM8jHehDYCEWIjTFBO65D9xYQE5mgVbZih8w2P8CJFrm3j8PBb6NphLgupOaacGOwUrqxGGNq0rzle2MtW1P4Df71Erf--P7Zll-J6XefIFNPIPl937n4cZ-gKPDHVGT-dpw7wD5SCTCkDhMbcB1zLvNhWLknZUJeqoPH-lh314GfVSdNVyeKJz6GD_cBEzf_-arrvmZcryvStQ2qyUO_l0O9YpebQVO9KPpGZQEx4eFARGIs19DPZl43MxAEEbNiMUjIEEDU2cDktc1VHL3k2H-CVZMZ9ZNPelnTWJoxkGWrQQYFsHs" charset="UTF-8"></script><style>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=4bJ-tgihZIwHv8V43R8DlIB258vRCLeigS_8M85IswpVR1IXcdB-TkrkPK1ETif8-zyFfVjP_wut9Wx3jFti7w5Pb7uxruOVtpGs-HJbqJsB3VNLL_fYNOm14lcztq4k8gzBPhjmHRd0jacEbaeOGlIrqwh7dS-MsH3D1FqSaO98Pzntb9GgnBG0cJSzlcVFTlmqTe0UmRkzUGGSpOn72A-vzIuWFtlvt_5x0n9DE7-bTj8XqvicnE_W8ONR740pHcN1fiaCuj_Jl6O3Ij60nmf6LVCqh5L-lXFuk0ujzrXd1Z0Ubw4DGUUtAOczobmRkfxVVoapp-qTLei5GHe-iZI7bBLhkKEAeNaOIL7Cu84" charset="UTF-8"></script><style>
 :root{
   --pitch:#071a0f;--card:#0b2015;--card2:#0f2a1c;--border:#1a3a26;
   --gold:#f5c518;--gold2:#b8941a;--white:#eef4ee;--grey:#6b8a76;
@@ -31,6 +31,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(7,26,15,.96);backdrop-filt
 
 #user-pill{background:var(--card2);border:1px solid var(--border);color:var(--gold);
   padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+
 
 /* HERO */
 .hero{background:linear-gradient(160deg,#071a0f 0%,#0f3020 40%,#071a0f 100%);
@@ -275,12 +276,12 @@ table.tt tr:last-child td{border-bottom:none}
 /* COMPARE */
 .cmp-scroll{overflow-x:auto;width:100%;padding-bottom:6px}
 .cmp-section{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow-x:auto;margin-bottom:14px}
-.cmp-hd-row{display:grid;grid-template-columns:160px repeat(var(--user-count,3),minmax(140px,1fr)) 110px;min-width:max-content;background:var(--card2);border-bottom:1px solid var(--border)}
+.cmp-hd-row{display:grid;grid-template-columns:260px repeat(var(--user-count,3),minmax(140px,1fr)) 110px;min-width:max-content;background:var(--card2);border-bottom:1px solid var(--border)}
 .cmp-hd-cell{padding:8px 11px;font-size:11px;font-weight:600;color:var(--grey);letter-spacing:1px;text-transform:uppercase}
-.cmp-data-row{display:grid;grid-template-columns:160px repeat(var(--user-count,3),minmax(140px,1fr)) 110px;min-width:max-content;border-bottom:1px solid rgba(255,255,255,.04)}
+.cmp-data-row{display:grid;grid-template-columns:260px repeat(var(--user-count,3),minmax(140px,1fr)) 110px;min-width:max-content;border-bottom:1px solid rgba(255,255,255,.04)}
 .cmp-data-row:last-child{border-bottom:none}
 .cmp-cell{padding:8px 11px;font-size:12px}
-.cmp-cell.match{color:var(--grey);font-size:11px}
+.cmp-cell.match{color:var(--white);font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px}
 .cmp-ok{color:var(--green)}.cmp-no{color:var(--red)}.cmp-exact{color:var(--gold);font-weight:700}
 .actual-wrap{display:flex;align-items:center;gap:4px}
 .actual-in{width:56px;background:var(--pitch);border:1px solid var(--border);color:var(--blue);
@@ -307,7 +308,7 @@ table.tt tr:last-child td{border-bottom:none}
   .sc-in{width:28px;height:28px;font-size:13px}
   .lb-row{grid-template-columns:26px 1fr repeat(3,42px)}
   .dl-banner{flex-direction:column;gap:10px}
-  .cmp-hd-row,.cmp-data-row{grid-template-columns:120px repeat(var(--user-count,3),minmax(120px,1fr)) 90px}
+  .cmp-hd-row,.cmp-data-row{grid-template-columns:210px repeat(var(--user-count,3),minmax(120px,1fr)) 90px}
 }
 
 /* Real bracket sub-tabs */
@@ -324,6 +325,8 @@ table.tt tr:last-child td{border-bottom:none}
 .br-input.br-tbd{color:var(--grey);font-style:italic}
 .br-input::placeholder{color:var(--grey);font-style:italic;font-size:11px}
 
+
+
 /* Prediction bracket — click to advance */
 .bteam{cursor:default;transition:background .15s}
 .bteam[onclick]{cursor:pointer}
@@ -332,6 +335,7 @@ table.tt tr:last-child td{border-bottom:none}
 .bteam-loser{opacity:.35;text-decoration:line-through}
 .bmatch-done .bteam[onclick]:hover{background:transparent !important;cursor:default}
 .pick-hint{font-size:9px;color:var(--grey);margin-left:auto;opacity:.6;letter-spacing:.5px;white-space:nowrap}
+
 
 /* ── CELEBRATION OVERLAY ─────────────────────────────────────────── */
 #celebration{display:none;position:fixed;inset:0;z-index:900;
@@ -375,6 +379,7 @@ table.tt tr:last-child td{border-bottom:none}
 #confetti-canvas{position:fixed;inset:0;z-index:901;pointer-events:none;display:none}
 #confetti-canvas.show{display:block}
 
+
 /* ── LEADERBOARD TABS ─────────────────────────────────────────────── */
 .lb-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
 .lb-tab{background:var(--card);border:1px solid var(--border);color:var(--grey);
@@ -417,6 +422,8 @@ table.tt tr:last-child td{border-bottom:none}
 .grp-modal-ok:hover{background:var(--gold2)}
 .grp-modal-cancel{padding:10px 16px;background:var(--card2);color:var(--grey);
   border:1px solid var(--border);border-radius:8px;font:500 14px 'Inter',sans-serif;cursor:pointer}
+
+
 
 /* ── MOBILE LEADERBOARD FIX ───────────────────────────────────────
    Turns the leaderboard into readable cards on phones instead of
@@ -496,9 +503,10 @@ table.tt tr:last-child td{border-bottom:none}
   .sc-center{padding:6px 5px}
   .sc-in{width:30px;height:30px;font-size:14px}
 
-  .cmp-hd-row,.cmp-data-row{grid-template-columns:118px repeat(var(--user-count,3),minmax(96px,1fr)) 86px!important}
+  .cmp-hd-row,.cmp-data-row{grid-template-columns:200px repeat(var(--user-count,3),minmax(96px,1fr)) 86px!important}
   .cmp-hd-cell,.cmp-cell{padding:7px 6px;font-size:11px}
 }
+
 
 /* ── CLEAN ONE-LINE LOCKED / RESULTS DESIGN ─────────────────────── */
 .mcard.result-card{
@@ -571,111 +579,43 @@ table.tt tr:last-child td{border-bottom:none}
   .result-note{font-size:9px;white-space:normal}
 }
 
-/* ── FINAL MATCH CARD ALIGNMENT: uniform one-line scoreboard design ── */
-#pred-list .mcard,
-#pred-list .mcard.result-card{
-  display:grid !important;
-  grid-template-columns:minmax(0,1fr) 300px minmax(0,1fr) 54px !important;
-  align-items:stretch !important;
-  min-height:92px !important;
-  margin-bottom:10px !important;
-  border-radius:14px !important;
-  overflow:hidden !important;
-  background:linear-gradient(90deg,rgba(11,32,21,.98),rgba(15,42,28,.96)) !important;
-  border:1px solid rgba(34,197,94,.28) !important;
+
+
+/* ── COMPARE TABLE ONE-LINE MATCH DESIGN ────────────────────────── */
+.cmp-hd-row,.cmp-data-row{
+  grid-template-columns:260px repeat(var(--user-count,3),minmax(140px,1fr)) 110px;
 }
-#pred-list .mcard.saved{border-color:rgba(34,197,94,.45)!important;}
-#pred-list .mcard.missing-card{border-color:rgba(249,115,22,.38)!important;}
-#pred-list .mcard.played-card,
-#pred-list .mcard.locked-card-ui{border-color:rgba(107,138,118,.34)!important;opacity:1!important;pointer-events:auto!important;}
-#pred-list .tside{
-  padding:0 18px !important;
-  display:flex !important;
-  align-items:center !important;
-  min-width:0 !important;
-  background:rgba(7,26,15,.28) !important;
+.cmp-cell.match{
+  color:var(--white);
+  font-size:12px;
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  display:flex;
+  align-items:center;
+  gap:8px;
 }
-#pred-list .tside.away{justify-content:flex-end!important;text-align:right!important;}
-#pred-list .tname{
-  font-size:15px !important;
-  font-weight:800 !important;
-  color:var(--white) !important;
-  white-space:nowrap !important;
-  overflow:hidden !important;
-  text-overflow:ellipsis !important;
+.cmp-match-name{
+  display:inline-block;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
-#pred-list .sc-center,
-#pred-list .result-center{
-  background:rgba(7,26,15,.32) !important;
-  padding:12px 10px !important;
-  display:flex !important;
-  flex-direction:column !important;
-  align-items:center !important;
-  justify-content:center !important;
-  gap:7px !important;
+.cmp-vs{
+  color:var(--gold);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  flex:0 0 auto;
 }
-#pred-list .pred-line{
-  width:100% !important;
-  max-width:260px !important;
-  min-height:38px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  gap:10px !important;
-  flex-wrap:nowrap !important;
-  white-space:nowrap !important;
-  background:rgba(7,26,15,.72) !important;
-  border:1px solid rgba(255,255,255,.08) !important;
-  border-radius:999px !important;
-  padding:6px 12px !important;
-}
-#pred-list .pred-line.missing{border-color:rgba(249,115,22,.35)!important;background:rgba(249,115,22,.07)!important;}
-#pred-list .pred-line.editable{border-color:rgba(34,197,94,.22)!important;background:rgba(7,26,15,.68)!important;}
-#pred-list .pred-line.editable.missing{border-color:rgba(249,115,22,.34)!important;background:rgba(249,115,22,.06)!important;}
-#pred-list .pred-line .num,
-#pred-list .pred-line .sc-in{
-  width:42px !important;
-  height:32px !important;
-  border-radius:8px !important;
-  font-family:'Roboto Mono',monospace !important;
-  font-size:18px !important;
-  font-weight:900 !important;
-  line-height:1 !important;
-  text-align:center !important;
-  color:var(--white) !important;
-  background:rgba(0,0,0,.22) !important;
-  border:1px solid rgba(255,255,255,.08) !important;
-}
-#pred-list .pred-line .sc-in:focus{border-color:var(--gold)!important;background:rgba(15,42,28,.95)!important;}
-#pred-list .pred-line .dash,
-#pred-list .sc-sep{color:var(--grey)!important;font-size:17px!important;font-weight:900!important;}
-#pred-list .status-chip{flex-shrink:0!important;}
-#pred-list .result-note{
-  width:100% !important;
-  text-align:center !important;
-  font-size:12px !important;
-  line-height:1.2 !important;
-  white-space:nowrap !important;
-}
-#pred-list .grptag{
-  background:transparent !important;
-  color:var(--grey) !important;
-  font-size:11px !important;
-  font-weight:800 !important;
-  letter-spacing:.8px !important;
-}
-#pred-list .mcard > div:last-child{
-  background:rgba(15,42,28,.55) !important;
-  border-left:1px solid rgba(34,197,94,.18) !important;
-}
-@media(max-width:760px){
-  #pred-list .mcard,#pred-list .mcard.result-card{grid-template-columns:minmax(0,1fr) 155px minmax(0,1fr) 34px!important;min-height:84px!important;}
-  #pred-list .tside{padding:0 8px!important;}
-  #pred-list .tname{font-size:12px!important;}
-  #pred-list .pred-line{max-width:140px!important;gap:4px!important;padding:5px 6px!important;min-height:34px!important;}
-  #pred-list .pred-line .num,#pred-list .pred-line .sc-in{width:30px!important;height:28px!important;font-size:14px!important;}
-  #pred-list .result-note{font-size:9px!important;white-space:normal!important;}
-  #pred-list .status-chip{font-size:8px!important;padding:2px 5px!important;}
+@media(max-width:640px){
+  .cmp-hd-row,.cmp-data-row{
+    grid-template-columns:205px repeat(var(--user-count,3),minmax(96px,1fr)) 86px!important;
+  }
+  .cmp-cell.match{font-size:11px;gap:5px}
 }
 
 </style>
@@ -837,6 +777,7 @@ table.tt tr:last-child td{border-bottom:none}
   </div>
 </nav>
 
+
 <!-- REMINDER BANNER -->
 <div id="reminder-banner" style="position:relative">
   <span class="rb-text" id="reminder-text">⚠️ Missing predictions!</span>
@@ -907,6 +848,7 @@ table.tt tr:last-child td{border-bottom:none}
 </div>
 
 <div class="toast" id="toast"></div>
+
 
 <!-- ── LEADERBOARD GROUP MODAL ──────────────────────────────────── -->
 <div id="grp-modal-overlay">
@@ -1023,6 +965,7 @@ table.tt tr:last-child td{border-bottom:none}
     <div class="br-scroll"><div class="br-tree" id="br-tree-real"></div></div>
   </div>
 </div>
+
 
 <!-- COMPARE -->
 <div id="compare" class="sec">
@@ -1455,6 +1398,7 @@ function shouldSkipActualFetch(mid){
   return isActualFinalLocked(mid);
 }
 
+
 // ── Custom users ──────────────────────────────────────────────────────
 const CUSTOM_USERS_KEY = 'wc2026_custom_users'; // kept for migration only
 function getLocalCustomUsers() {
@@ -1519,6 +1463,7 @@ function wasCelShown(key) { return getCelShown().includes(key); }
 // Sync meta (no-op now — kept for compat)
 function lsync() { return {}; }
 function ssync(d) {}
+
 
 // ── Bootstrap: pull everything from Firebase ─────────────────────────
 async function bootstrapData() {
@@ -1774,6 +1719,7 @@ function startPolling() { startRealtimeSync(); }
 // Seed Moataz data
 const MOATAZ={M001:{hg:2,ag:1},M002:{hg:3,ag:1},M003:{hg:1,ag:1},M004:{hg:2,ag:1},M005:{hg:0,ag:3},M006:{hg:1,ag:1},M007:{hg:2,ag:2},M008:{hg:0,ag:2},M009:{hg:2,ag:2},M010:{hg:5,ag:0},M011:{hg:1,ag:3},M012:{hg:1,ag:1},M013:{hg:1,ag:3},M014:{hg:2,ag:0},M015:{hg:0,ag:0},M016:{hg:0,ag:1},M017:{hg:3,ag:2},M018:{hg:1,ag:2},M019:{hg:3,ag:1},M020:{hg:1,ag:0},M021:{hg:2,ag:0},M022:{hg:1,ag:1},M023:{hg:2,ag:1},M024:{hg:1,ag:2},M025:{hg:1,ag:1},M026:{hg:3,ag:1},M027:{hg:3,ag:0},M028:{hg:2,ag:1},M029:{hg:4,ag:1},M030:{hg:0,ag:2},M031:{hg:1,ag:1},M032:{hg:2,ag:1},M033:{hg:3,ag:2},M034:{hg:4,ag:2},M035:{hg:2,ag:1},M036:{hg:0,ag:2},M037:{hg:1,ag:0},M038:{hg:3,ag:0},M039:{hg:3,ag:0},M040:{hg:0,ag:2},M041:{hg:1,ag:2},M042:{hg:4,ag:0},M043:{hg:2,ag:2},M044:{hg:1,ag:2},M045:{hg:1,ag:0},M046:{hg:0,ag:3},M047:{hg:2,ag:0},M048:{hg:2,ag:1},M049:{hg:2,ag:3},M050:{hg:3,ag:0},M051:{hg:0,ag:0},M052:{hg:2,ag:1},M053:{hg:2,ag:2},M054:{hg:1,ag:3},M055:{hg:0,ag:3},M056:{hg:2,ag:2},M057:{hg:2,ag:0},M058:{hg:1,ag:0},M059:{hg:3,ag:1},M060:{hg:2,ag:1},M061:{hg:2,ag:2},M062:{hg:2,ag:0},M063:{hg:1,ag:1},M064:{hg:0,ag:3},M065:{hg:2,ag:0},M066:{hg:1,ag:1},M067:{hg:2,ag:1},M068:{hg:4,ag:0},M069:{hg:2,ag:2},M070:{hg:0,ag:2},M071:{hg:2,ag:3},M072:{hg:2,ag:1}};
 
+
 // ═══════════════════════════════════════════════════════════════════
 // ── MATCH RESULT SYNC ───────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
@@ -1834,6 +1780,7 @@ async function fetchResultsFromSource(url, parser) {
   if(!r.ok) throw new Error('HTTP ' + r.status);
   return parser(await r.text());
 }
+
 
 function normalizeApiResultsToActuals(payload, source='api'){
   const out = {};
@@ -1947,6 +1894,7 @@ function startResultPolling() {
   }, 2 * 60000); // every 2 minutes
 }
 
+
 // ═══════════════════════════════════════════════════════════════════
 // ── DEADLINE ENGINE ──────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
@@ -1954,6 +1902,7 @@ function isLocked(stageKey) {
   const s = STAGES.find(x=>x.key===stageKey);
   return s ? Date.now() >= new Date(s.deadline).getTime() : true;
 }
+
 
 // My Bracket should remain hidden/locked until the full group stage is finished.
 // It unlocks after the last group match is expected to end, then uses the user's saved group predictions.
@@ -2208,6 +2157,7 @@ function openUserModal() {
   document.getElementById('user-overlay').classList.add('show');
   setTimeout(() => { if(u) u.focus(); }, 100);
 }
+
 
 // ── AUTH SCREEN SWITCHING ─────────────────────────────────────────────
 function showLogin() {
@@ -2903,6 +2853,7 @@ async function sendEmailAllMissing(){
   else showToast(`📨 Sent ${sent} missing reminder${sent !== 1 ? 's' : ''}`);
 }
 
+
 const BUILTIN_USERS = [
   {name:'Khairo', color:'#e85d04'},
   {name:'Moataz', color:'#3b82f6'},
@@ -3553,13 +3504,13 @@ function renderPredList() {
         </div>`;
       } else {
         let editResultComp = saved ? `<div class="result-note good">Saved${timeLeft?' · '+timeLeft+' left':''}</div>` : `<div class="result-note neutral" style="color:var(--orange)">Not entered${timeLeft?' · '+timeLeft+' left':''}</div>`;
-        list.innerHTML += `<div class="mcard result-card ${saved?'saved':'missing-card'}" id="card-${mid}">
+        list.innerHTML += `<div class="mcard ${saved?'saved':'missing-card'}" id="card-${mid}">
           <div class="tside"><div class="tname">${home}</div></div>
-          <div class="sc-center result-center">
-            <div class="pred-line editable ${saved?'saved':'missing'}">
+          <div class="sc-center">
+            <div class="sc-row">
               <input type="number" class="sc-in" id="hg-${mid}" value="${hgv}" placeholder="–" min="0" max="20"
                 oninput="markChg('${mid}')" onblur="autoSave('${mid}')">
-              <span class="dash">–</span>
+              <span class="sc-sep">–</span>
               <input type="number" class="sc-in" id="ag-${mid}" value="${agv}" placeholder="–" min="0" max="20"
                 oninput="markChg('${mid}')" onblur="autoSave('${mid}')">
             </div>
@@ -4292,6 +4243,7 @@ function renderBracketReal() {
 // Keep old name for compatibility
 function renderBracket() { renderBracketPred(); }
 
+
 // ── REAL BRACKET (editable) ──────────────────────────────────────────
 
 function saveRealSlot(input) {
@@ -4400,6 +4352,7 @@ function renderBracketReal() {
 // Keep old name for compatibility
 function renderBracket() { renderBracketPred(); }
 
+
 // ═══════════════════════════════════════════════════════════════════
 // ── COMPARE ─────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
@@ -4430,7 +4383,7 @@ function renderCompare(){
   const sid='cmp-grid-style';
   let sel=document.getElementById(sid);
   if(!sel){sel=document.createElement('style');sel.id=sid;document.head.appendChild(sel);}
-  sel.textContent=`.cmp-hd-row,.cmp-data-row{grid-template-columns:160px repeat(${n},minmax(140px,1fr)) 110px;}`;
+  sel.textContent=`.cmp-hd-row,.cmp-data-row{grid-template-columns:260px repeat(${n},minmax(140px,1fr)) 110px;}`;
 
   const stageLockedMap={};
   STAGES.forEach(s=>{stageLockedMap[s.key]=isLocked(s.key);});
@@ -4462,7 +4415,7 @@ function renderCompare(){
       const isAuto=act&&act.source&&act.source!=='manual';
       const row=document.createElement('div');
       row.className='cmp-data-row';
-      let html=`<div class="cmp-cell match" style="font-size:11px;display:flex;flex-direction:column;gap:2px"><strong style="color:var(--white)">${home}</strong><span style="color:var(--grey)">v</span><strong style="color:var(--white)">${away}</strong></div>`;
+      let html=`<div class="cmp-cell match" title="${home} vs ${away}"><span class="cmp-match-name">${home}</span><span class="cmp-vs">vs</span><span class="cmp-match-name">${away}</span></div>`;
 
       cmpUsers.forEach(u=>{
         const p=allPreds[u][mid];
@@ -4514,6 +4467,7 @@ function setCmpFilt(f,btn){
   renderCompare();
 }
 
+
 function saveActual(mid, val, isAuto=false) {
   val=String(val||'').trim(); if(!val) return;
   const pts=val.split(/[-–]/); if(pts.length!==2) return;
@@ -4550,6 +4504,7 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),2600);
 }
 function toast(msg){ showToast(msg); }
+
 
 // ════════════════════════════════════════════════════════════════════
 // ── CELEBRATION SYSTEM ──────────────────────────────────────────────
@@ -4727,7 +4682,19 @@ try {
   });
 })();
 
+
+
+
+
 </script>
+
+
+
+
+
+
+
+
 
 <!-- ══ MUSIC PLAYER ════════════════════════════════════════════════ -->
 <style>
