@@ -290,6 +290,17 @@ table.tt tr:last-child td{border-bottom:none}
 .actual-in:focus{border-color:var(--blue)}
 .auto-tag{font-size:9px;background:rgba(59,130,246,.15);color:var(--blue);padding:1px 5px;border-radius:6px;font-weight:600;white-space:nowrap}
 
+/* REMINDER BANNER */
+#reminder-banner{display:none;position:fixed;top:50px;left:0;right:0;z-index:190;
+  background:linear-gradient(90deg,#7c2d00,#c2410c);border-bottom:2px solid #f97316;
+  padding:10px 16px;text-align:center;animation:bannerPulse 2s infinite}
+@keyframes bannerPulse{0%,100%{opacity:1}50%{opacity:.85}}
+#reminder-banner .rb-text{color:#fff;font-size:13px;font-weight:600}
+#reminder-banner .rb-text span{color:#fbbf24}
+#reminder-banner .rb-close{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:#fff;font-size:18px;cursor:pointer;opacity:.7}
+#reminder-banner .rb-close:hover{opacity:1}
+
 /* TOAST */
 .toast{position:fixed;bottom:24px;right:24px;background:#1a5c38;border:1px solid #22c55e;
   color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:999;
@@ -633,9 +644,16 @@ table.tt tr:last-child td{border-bottom:none}
   <div class="nav-right">
     <div id="user-pill" onclick="openUserModal()">Select User</div>
     <button id="admin-btn" onclick="openManageUsers()" style="display:none;background:rgba(245,197,24,.15);border:1px solid rgba(245,197,24,.3);color:var(--gold);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">👑 Users</button>
+    <button id="wa-btn" onclick="openWaModal()" style="display:none;background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.3);color:#25D366;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">📲 Remind</button>
   </div>
 </nav>
 
+
+<!-- ══ REMINDER BANNER ═══════════════════════════════════════════ -->
+<div id="reminder-banner">
+  <span class="rb-text" id="reminder-text">⚠️ You have missing predictions!</span>
+  <button class="rb-close" onclick="document.getElementById('reminder-banner').style.display='none'">✕</button>
+</div>
 
 <!-- ══ CELEBRATION OVERLAY ════════════════════════════════════════ -->
 <canvas id="confetti-canvas"></canvas>
@@ -676,6 +694,22 @@ table.tt tr:last-child td{border-bottom:none}
     <div class="grp-modal-btns">
       <button class="grp-modal-cancel" onclick="closeGrpModal()">Cancel</button>
       <button class="grp-modal-ok" onclick="saveGrpModal()">Create Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- WHATSAPP REMINDER MODAL (admin only) -->
+<div id="wa-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:700;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 32px;width:460px;max-width:94vw;max-height:85vh;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#25D366;margin:0">📲 WhatsApp Reminders</h2>
+      <button onclick="closeWaModal()" style="background:var(--card2);border:1px solid var(--border);color:var(--grey);border-radius:8px;padding:5px 12px;cursor:pointer">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--grey)">Store player WhatsApp numbers. Click Send to open WhatsApp with a personalised reminder.</div>
+    <div id="wa-player-list" style="overflow-y:auto;display:flex;flex-direction:column;gap:8px;max-height:50vh"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="sendWaAll()" style="flex:1;padding:10px;background:#25D366;color:#fff;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">📲 Send All Reminders</button>
+      <button onclick="saveWaNumbers()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">💾 Save Numbers</button>
     </div>
   </div>
 </div>
@@ -1473,6 +1507,7 @@ async function debugApiResults() {
 function refreshUI() {
   rebuildUserModalList();
   renderDashboard();
+  updateReminderBanner();
   if(currentUser) {
     if(document.getElementById('groups').classList.contains('act')) renderGroups();
     if(document.getElementById('compare').classList.contains('act')) renderCompare();
@@ -2350,6 +2385,162 @@ const BUILTIN_USERS = [
 const ADMINS = ['Moataz']; // Admins can delete any custom user
 function isAdmin(user) { return ADMINS.includes(user); }
 
+// ══════════════════════════════════════════════════════════════════
+// ── REMINDER BANNER ─────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+function updateReminderBanner() {
+  const banner = document.getElementById('reminder-banner');
+  const text = document.getElementById('reminder-text');
+  if(!banner || !currentUser) { if(banner) banner.style.display='none'; return; }
+
+  const next = getNextDeadline();
+  if(!next) { banner.style.display='none'; return; }
+
+  const preds = lp(currentUser);
+  const missing = next.mids.filter(mid => {
+    const p = preds[mid];
+    return !isMatchLocked(mid) && (!p || p.hg === undefined);
+  });
+
+  if(missing.length === 0) { banner.style.display='none'; return; }
+
+  const tl = timeLeft(next.deadline);
+  if(!tl || tl.diff > 86400000 * 2) { banner.style.display='none'; return; } // only show within 2 days
+
+  const urgency = tl.diff < 3600000 ? '🚨' : tl.diff < 21600000 ? '⚡' : '⚠️';
+  const timeStr = tl.d > 0 ? `${tl.d}d ${tl.h}h` : tl.h > 0 ? `${tl.h}h ${tl.m}m` : `${tl.m}m`;
+
+  text.innerHTML = `${urgency} <span>${missing.length} prediction${missing.length!==1?'s':''} missing</span> · Deadline in <span>${timeStr}</span> · <a href="#" onclick="goTo('predictions',document.querySelector('.nav-btn:nth-child(4)'));document.getElementById('reminder-banner').style.display='none';return false;" style="color:#fbbf24;text-decoration:underline">Enter now →</a>`;
+  banner.style.display = 'block';
+}
+
+function getNextDeadline() {
+  for(const s of STAGES) {
+    const next = nextDeadlineInStage(s.key);
+    if(next) return next;
+  }
+  return null;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ── WHATSAPP REMINDERS ───────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+let _waNumbers = {};
+
+async function openWaModal() {
+  if(!isAdmin(currentUser)) return;
+  // Load saved numbers from Firebase
+  try {
+    const saved = await fbGet('wa_numbers');
+    _waNumbers = saved || {};
+  } catch(e) { _waNumbers = {}; }
+  renderWaPlayerList();
+  document.getElementById('wa-overlay').style.display = 'flex';
+}
+
+function closeWaModal() {
+  document.getElementById('wa-overlay').style.display = 'none';
+}
+
+function renderWaPlayerList() {
+  const list = document.getElementById('wa-player-list');
+  if(!list) return;
+  const all = getAllUsers();
+  const builtins = BUILTIN_USERS.map(u=>u.name);
+
+  // Build deadline info for message
+  const next = getNextDeadline();
+  const timeStr = next ? (() => {
+    const tl = timeLeft(next.deadline);
+    if(!tl) return 'soon';
+    return tl.d > 0 ? `${tl.d}d ${tl.h}h` : tl.h > 0 ? `${tl.h}h ${tl.m}m` : `${tl.m}m`;
+  })() : 'soon';
+
+  list.innerHTML = all.map(u => {
+    const preds = lp(u.name);
+    const missing = next ? next.mids.filter(mid => {
+      const p = preds[mid];
+      return !isMatchLocked(mid) && (!p || p.hg === undefined);
+    }).length : 0;
+    const savedNum = _waNumbers[fbKey(u.name)] || '';
+    const msg = buildWaMessage(u.name, missing, timeStr);
+    const waLink = savedNum
+      ? `https://wa.me/${savedNum.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`
+      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+
+    return `<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="width:28px;height:28px;border-radius:50%;background:${COLORS[u.name]||'#666'}20;color:${COLORS[u.name]||'#666'};
+          display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">${u.name.charAt(0)}</div>
+        <div style="flex:1;font-weight:600;font-size:13px">${u.name}
+          ${missing>0?`<span style="color:var(--orange);font-size:11px;font-weight:400"> · ${missing} missing</span>`:'<span style="color:var(--green);font-size:11px;font-weight:400"> · ✅ all done</span>'}
+        </div>
+        <a href="${waLink}" target="_blank"
+          style="background:#25D366;color:#fff;border:none;border-radius:6px;padding:5px 12px;
+            font:600 12px Inter,sans-serif;cursor:pointer;text-decoration:none;flex-shrink:0">
+          📲 Send</a>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:11px;color:var(--grey);flex-shrink:0">📞</span>
+        <input type="tel" placeholder="WhatsApp number e.g. 201234567890"
+          value="${savedNum}"
+          onchange="_waNumbers['${fbKey(u.name)}']=this.value"
+          oninput="_waNumbers['${fbKey(u.name)}']=this.value;renderWaPlayerList()"
+          style="flex:1;background:var(--pitch);border:1px solid var(--border);color:var(--white);
+            border-radius:6px;padding:5px 10px;font-size:12px;outline:none;font-family:Inter,sans-serif">
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildWaMessage(name, missing, timeStr) {
+  if(missing === 0) {
+    return `⚽ Hey ${name}! You're all set for WC2026 Predictions — all predictions entered. Good luck! 🏆
+mizoprediction.netlify.app`;
+  }
+  return `⚽ Hey ${name}! You have *${missing} prediction${missing!==1?'s':''} missing* for WC2026.
+
+⏰ Deadline in *${timeStr}* — don't miss it!
+
+👉 mizoprediction.netlify.app`;
+}
+
+async function saveWaNumbers() {
+  try {
+    await fbSet('wa_numbers', _waNumbers);
+    showToast('✅ Numbers saved!');
+  } catch(e) { showToast('❌ Failed to save'); }
+}
+
+function sendWaAll() {
+  const all = getAllUsers();
+  const next = getNextDeadline();
+  const timeStr = next ? (() => {
+    const tl = timeLeft(next.deadline);
+    if(!tl) return 'soon';
+    return tl.d>0?`${tl.d}d ${tl.h}h`:tl.h>0?`${tl.h}h ${tl.m}m`:`${tl.m}m`;
+  })() : 'soon';
+
+  // Open WhatsApp for each player who has a number saved and missing predictions
+  let opened = 0;
+  all.forEach(u => {
+    const num = _waNumbers[fbKey(u.name)];
+    if(!num) return;
+    const preds = lp(u.name);
+    const missing = next ? next.mids.filter(mid => {
+      const p = preds[mid];
+      return !isMatchLocked(mid) && (!p || p.hg === undefined);
+    }).length : 0;
+    if(missing === 0) return;
+    const msg = buildWaMessage(u.name, missing, timeStr);
+    const link = `https://wa.me/${num.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`;
+    setTimeout(() => window.open(link, '_blank'), opened * 800); // stagger openings
+    opened++;
+  });
+  if(opened === 0) showToast('No numbers saved or everyone is done!');
+  else showToast(`📲 Opening ${opened} WhatsApp chat${opened!==1?'s':''}…`);
+}
+
 function openManageUsers() {
   if(!isAdmin(currentUser)) return;
   renderManageUsersList();
@@ -2497,6 +2688,8 @@ function finishLogin(name, color) {
   // Show admin button for admins
   const adminBtn = document.getElementById('admin-btn');
   if(adminBtn) adminBtn.style.display = isAdmin(name) ? '' : 'none';
+  const waBtn = document.getElementById('wa-btn');
+  if(waBtn) waBtn.style.display = isAdmin(name) ? '' : 'none';
   // Load this user's latest predictions from Firebase, then render
   loadPredictions(name).then(() => {
     updateHeroStats();
@@ -2504,6 +2697,9 @@ function finishLogin(name, color) {
     renderGroups();
     renderPreds();
     renderBracketPred();
+    updateReminderBanner();
+    // Refresh banner every minute
+    setInterval(updateReminderBanner, 60000);
   });
 }
 
