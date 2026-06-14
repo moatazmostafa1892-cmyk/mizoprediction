@@ -678,6 +678,12 @@ table.tt tr:last-child td{border-bottom:none}
       <h2 style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#3b82f6;margin:0">📧 Email Reminders</h2>
       <button onclick="closeEmailModal()" style="background:var(--card2);border:1px solid var(--border);color:var(--grey);border-radius:8px;padding:5px 12px;cursor:pointer">✕</button>
     </div>
+
+    <!-- AUTO MAIL STATUS - shows latest automatic reminder result from Firebase -->
+    <div id="auto-reminder-status" style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--grey);line-height:1.45">
+      🤖 Auto mail status: checking...
+    </div>
+
     <div style="font-size:12px;color:var(--grey)">
       Enter player emails, select who should receive a reminder, then send to selected players or all players with missing predictions.
     </div>
@@ -2518,8 +2524,81 @@ function getEmailAddress(name){
 async function openEmailModal(){
   if(!isAdmin(currentUser)) return;
   await loadPlayerEmails();
+  await loadAutoReminderStatus();
   renderEmailPlayerList();
   document.getElementById('email-overlay').style.display = 'flex';
+}
+
+async function loadAutoReminderStatus(){
+  const box = document.getElementById('auto-reminder-status');
+  if(!box) return;
+
+  box.style.background = 'rgba(59,130,246,.08)';
+  box.style.borderColor = 'rgba(59,130,246,.25)';
+  box.style.color = 'var(--grey)';
+  box.innerHTML = '🤖 Auto mail status: checking...';
+
+  try{
+    const status = await fbGet('auto_reminder_status');
+
+    if(!status || !status.lastRun){
+      box.style.background = 'rgba(249,115,22,.08)';
+      box.style.borderColor = 'rgba(249,115,22,.25)';
+      box.style.color = 'var(--orange)';
+      box.innerHTML = '🤖 Auto mail status<br>⏳ No automatic reminder has been sent yet.';
+      return;
+    }
+
+    const sentNames = Array.isArray(status.sent) ? status.sent : [];
+    const sentCount = Number(status.sentCount ?? sentNames.length ?? 0);
+    const errorCount = Number(status.errorCount ?? (Array.isArray(status.errors) ? status.errors.length : 0));
+    const lastRunText = new Date(status.lastRun).toLocaleString('en-GB');
+    const deadlineText = status.deadline || status.deadlineName || status.stage || '-';
+
+    if(errorCount > 0){
+      box.style.background = 'rgba(239,68,68,.08)';
+      box.style.borderColor = 'rgba(239,68,68,.25)';
+      box.style.color = 'var(--red)';
+      box.innerHTML = `
+        🤖 Auto mail status<br>
+        🔴 Last run had ${errorCount} error(s)<br>
+        📧 ${sentCount} email(s) sent<br>
+        📅 ${deadlineText}<br>
+        🕒 ${lastRunText}
+      `;
+      return;
+    }
+
+    if(sentCount > 0){
+      box.style.background = 'rgba(34,197,94,.08)';
+      box.style.borderColor = 'rgba(34,197,94,.25)';
+      box.style.color = 'var(--green)';
+      box.innerHTML = `
+        🤖 Auto mail status<br>
+        ✅ Last automatic reminder sent successfully<br>
+        📧 ${sentCount} email(s) sent${sentNames.length ? ': ' + sentNames.join(', ') : ''}<br>
+        📅 ${deadlineText}<br>
+        🕒 ${lastRunText}
+      `;
+      return;
+    }
+
+    box.style.background = 'rgba(249,115,22,.08)';
+    box.style.borderColor = 'rgba(249,115,22,.25)';
+    box.style.color = 'var(--orange)';
+    box.innerHTML = `
+      🤖 Auto mail status<br>
+      🟠 Last automatic check completed — no emails needed<br>
+      📅 ${deadlineText}<br>
+      🕒 ${lastRunText}
+    `;
+  }catch(e){
+    console.warn('Auto reminder status could not be loaded', e);
+    box.style.background = 'rgba(239,68,68,.08)';
+    box.style.borderColor = 'rgba(239,68,68,.25)';
+    box.style.color = 'var(--red)';
+    box.innerHTML = '🤖 Auto mail status<br>🔴 Could not load auto reminder status.';
+  }
 }
 
 function closeEmailModal(){
