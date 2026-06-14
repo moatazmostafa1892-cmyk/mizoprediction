@@ -6,7 +6,7 @@
 <title>⚽ WC 2026 Predictions</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=rr9VHI0Yy4YiaR_uXa5itxItvo5TS7OeaZtVOkaftaS3RIo9uM8loEFFW4UQKzIUjP5cwcWISksJKXz6mBAkDrcaUBjuXDEkG7VNRV3UObzULt8eFyafv9U3utFfL25wJhZBewLwddLSCK_gxIpFbxw-P_XFK_xNYHVqzbmGYxBwutMsVpCnR9TDlQ1bAQNYJUPqbG8oGhM1Egk2vPBVva8x2sQ1QB7NPEoWGt7OMjGZtLYe2-9GCECUggXmzlXGWNLZ5DfxdgO5I3kIRgghn3xbkDBha0xoMHeUTzDOLlT6Jj8Vu7QeCzHL8xXZAVkQcKvINwrsqeFhvCnIVmJjxw" charset="UTF-8"></script><style>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=a67HohdQXPl1BOQX_0CSg36ZB2jpspZ2wsSq0g_NwWNhGxHVEvKGbJrNM8jHehDYCEWIjTFBO65D9xYQE5mgVbZih8w2P8CJFrm3j8PBb6NphLgupOaacGOwUrqxGGNq0rzle2MtW1P4Df71Erf--P7Zll-J6XefIFNPIPl937n4cZ-gKPDHVGT-dpw7wD5SCTCkDhMbcB1zLvNhWLknZUJeqoPH-lh314GfVSdNVyeKJz6GD_cBEzf_-arrvmZcryvStQ2qyUO_l0O9YpebQVO9KPpGZQEx4eFARGIs19DPZl43MxAEEbNiMUjIEEDU2cDktc1VHL3k2H-CVZMZ9ZNPelnTWJoxkGWrQQYFsHs" charset="UTF-8"></script><style>
 :root{
   --pitch:#071a0f;--card:#0b2015;--card2:#0f2a1c;--border:#1a3a26;
   --gold:#f5c518;--gold2:#b8941a;--white:#eef4ee;--grey:#6b8a76;
@@ -31,7 +31,6 @@ nav{position:sticky;top:0;z-index:200;background:rgba(7,26,15,.96);backdrop-filt
 
 #user-pill{background:var(--card2);border:1px solid var(--border);color:var(--gold);
   padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
-
 
 /* HERO */
 .hero{background:linear-gradient(160deg,#071a0f 0%,#0f3020 40%,#071a0f 100%);
@@ -325,8 +324,6 @@ table.tt tr:last-child td{border-bottom:none}
 .br-input.br-tbd{color:var(--grey);font-style:italic}
 .br-input::placeholder{color:var(--grey);font-style:italic;font-size:11px}
 
-
-
 /* Prediction bracket — click to advance */
 .bteam{cursor:default;transition:background .15s}
 .bteam[onclick]{cursor:pointer}
@@ -335,7 +332,6 @@ table.tt tr:last-child td{border-bottom:none}
 .bteam-loser{opacity:.35;text-decoration:line-through}
 .bmatch-done .bteam[onclick]:hover{background:transparent !important;cursor:default}
 .pick-hint{font-size:9px;color:var(--grey);margin-left:auto;opacity:.6;letter-spacing:.5px;white-space:nowrap}
-
 
 /* ── CELEBRATION OVERLAY ─────────────────────────────────────────── */
 #celebration{display:none;position:fixed;inset:0;z-index:900;
@@ -379,7 +375,6 @@ table.tt tr:last-child td{border-bottom:none}
 #confetti-canvas{position:fixed;inset:0;z-index:901;pointer-events:none;display:none}
 #confetti-canvas.show{display:block}
 
-
 /* ── LEADERBOARD TABS ─────────────────────────────────────────────── */
 .lb-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
 .lb-tab{background:var(--card);border:1px solid var(--border);color:var(--grey);
@@ -422,8 +417,6 @@ table.tt tr:last-child td{border-bottom:none}
 .grp-modal-ok:hover{background:var(--gold2)}
 .grp-modal-cancel{padding:10px 16px;background:var(--card2);color:var(--grey);
   border:1px solid var(--border);border-radius:8px;font:500 14px 'Inter',sans-serif;cursor:pointer}
-
-
 
 /* ── MOBILE LEADERBOARD FIX ───────────────────────────────────────
    Turns the leaderboard into readable cards on phones instead of
@@ -507,7 +500,6 @@ table.tt tr:last-child td{border-bottom:none}
   .cmp-hd-cell,.cmp-cell{padding:7px 6px;font-size:11px}
 }
 
-
 /* ── CLEAN ONE-LINE LOCKED / RESULTS DESIGN ─────────────────────── */
 .mcard.result-card{
   grid-template-columns:minmax(0,1fr) 260px minmax(0,1fr) 48px;
@@ -578,8 +570,6 @@ table.tt tr:last-child td{border-bottom:none}
   .status-chip{font-size:8px;padding:2px 5px}
   .result-note{font-size:9px;white-space:normal}
 }
-
-
 
 /* ── FINAL MATCH CARD ALIGNMENT: uniform one-line scoreboard design ── */
 #pred-list .mcard,
@@ -847,7 +837,6 @@ table.tt tr:last-child td{border-bottom:none}
   </div>
 </nav>
 
-
 <!-- REMINDER BANNER -->
 <div id="reminder-banner" style="position:relative">
   <span class="rb-text" id="reminder-text">⚠️ Missing predictions!</span>
@@ -918,7 +907,6 @@ table.tt tr:last-child td{border-bottom:none}
 </div>
 
 <div class="toast" id="toast"></div>
-
 
 <!-- ── LEADERBOARD GROUP MODAL ──────────────────────────────────── -->
 <div id="grp-modal-overlay">
@@ -1035,7 +1023,6 @@ table.tt tr:last-child td{border-bottom:none}
     <div class="br-scroll"><div class="br-tree" id="br-tree-real"></div></div>
   </div>
 </div>
-
 
 <!-- COMPARE -->
 <div id="compare" class="sec">
@@ -1468,7 +1455,6 @@ function shouldSkipActualFetch(mid){
   return isActualFinalLocked(mid);
 }
 
-
 // ── Custom users ──────────────────────────────────────────────────────
 const CUSTOM_USERS_KEY = 'wc2026_custom_users'; // kept for migration only
 function getLocalCustomUsers() {
@@ -1533,7 +1519,6 @@ function wasCelShown(key) { return getCelShown().includes(key); }
 // Sync meta (no-op now — kept for compat)
 function lsync() { return {}; }
 function ssync(d) {}
-
 
 // ── Bootstrap: pull everything from Firebase ─────────────────────────
 async function bootstrapData() {
@@ -1789,7 +1774,6 @@ function startPolling() { startRealtimeSync(); }
 // Seed Moataz data
 const MOATAZ={M001:{hg:2,ag:1},M002:{hg:3,ag:1},M003:{hg:1,ag:1},M004:{hg:2,ag:1},M005:{hg:0,ag:3},M006:{hg:1,ag:1},M007:{hg:2,ag:2},M008:{hg:0,ag:2},M009:{hg:2,ag:2},M010:{hg:5,ag:0},M011:{hg:1,ag:3},M012:{hg:1,ag:1},M013:{hg:1,ag:3},M014:{hg:2,ag:0},M015:{hg:0,ag:0},M016:{hg:0,ag:1},M017:{hg:3,ag:2},M018:{hg:1,ag:2},M019:{hg:3,ag:1},M020:{hg:1,ag:0},M021:{hg:2,ag:0},M022:{hg:1,ag:1},M023:{hg:2,ag:1},M024:{hg:1,ag:2},M025:{hg:1,ag:1},M026:{hg:3,ag:1},M027:{hg:3,ag:0},M028:{hg:2,ag:1},M029:{hg:4,ag:1},M030:{hg:0,ag:2},M031:{hg:1,ag:1},M032:{hg:2,ag:1},M033:{hg:3,ag:2},M034:{hg:4,ag:2},M035:{hg:2,ag:1},M036:{hg:0,ag:2},M037:{hg:1,ag:0},M038:{hg:3,ag:0},M039:{hg:3,ag:0},M040:{hg:0,ag:2},M041:{hg:1,ag:2},M042:{hg:4,ag:0},M043:{hg:2,ag:2},M044:{hg:1,ag:2},M045:{hg:1,ag:0},M046:{hg:0,ag:3},M047:{hg:2,ag:0},M048:{hg:2,ag:1},M049:{hg:2,ag:3},M050:{hg:3,ag:0},M051:{hg:0,ag:0},M052:{hg:2,ag:1},M053:{hg:2,ag:2},M054:{hg:1,ag:3},M055:{hg:0,ag:3},M056:{hg:2,ag:2},M057:{hg:2,ag:0},M058:{hg:1,ag:0},M059:{hg:3,ag:1},M060:{hg:2,ag:1},M061:{hg:2,ag:2},M062:{hg:2,ag:0},M063:{hg:1,ag:1},M064:{hg:0,ag:3},M065:{hg:2,ag:0},M066:{hg:1,ag:1},M067:{hg:2,ag:1},M068:{hg:4,ag:0},M069:{hg:2,ag:2},M070:{hg:0,ag:2},M071:{hg:2,ag:3},M072:{hg:2,ag:1}};
 
-
 // ═══════════════════════════════════════════════════════════════════
 // ── MATCH RESULT SYNC ───────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
@@ -1850,7 +1834,6 @@ async function fetchResultsFromSource(url, parser) {
   if(!r.ok) throw new Error('HTTP ' + r.status);
   return parser(await r.text());
 }
-
 
 function normalizeApiResultsToActuals(payload, source='api'){
   const out = {};
@@ -1964,7 +1947,6 @@ function startResultPolling() {
   }, 2 * 60000); // every 2 minutes
 }
 
-
 // ═══════════════════════════════════════════════════════════════════
 // ── DEADLINE ENGINE ──────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
@@ -1972,7 +1954,6 @@ function isLocked(stageKey) {
   const s = STAGES.find(x=>x.key===stageKey);
   return s ? Date.now() >= new Date(s.deadline).getTime() : true;
 }
-
 
 // My Bracket should remain hidden/locked until the full group stage is finished.
 // It unlocks after the last group match is expected to end, then uses the user's saved group predictions.
@@ -2227,7 +2208,6 @@ function openUserModal() {
   document.getElementById('user-overlay').classList.add('show');
   setTimeout(() => { if(u) u.focus(); }, 100);
 }
-
 
 // ── AUTH SCREEN SWITCHING ─────────────────────────────────────────────
 function showLogin() {
@@ -2922,7 +2902,6 @@ async function sendEmailAllMissing(){
   if(sent === 0) showToast('No missing predictions or missing email addresses');
   else showToast(`📨 Sent ${sent} missing reminder${sent !== 1 ? 's' : ''}`);
 }
-
 
 const BUILTIN_USERS = [
   {name:'Khairo', color:'#e85d04'},
@@ -4313,7 +4292,6 @@ function renderBracketReal() {
 // Keep old name for compatibility
 function renderBracket() { renderBracketPred(); }
 
-
 // ── REAL BRACKET (editable) ──────────────────────────────────────────
 
 function saveRealSlot(input) {
@@ -4421,7 +4399,6 @@ function renderBracketReal() {
 }
 // Keep old name for compatibility
 function renderBracket() { renderBracketPred(); }
-
 
 // ═══════════════════════════════════════════════════════════════════
 // ── COMPARE ─────────────────────────────────────────────────────────
@@ -4537,7 +4514,6 @@ function setCmpFilt(f,btn){
   renderCompare();
 }
 
-
 function saveActual(mid, val, isAuto=false) {
   val=String(val||'').trim(); if(!val) return;
   const pts=val.split(/[-–]/); if(pts.length!==2) return;
@@ -4574,7 +4550,6 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),2600);
 }
 function toast(msg){ showToast(msg); }
-
 
 // ════════════════════════════════════════════════════════════════════
 // ── CELEBRATION SYSTEM ──────────────────────────────────────────────
@@ -4752,19 +4727,7 @@ try {
   });
 })();
 
-
-
-
-
 </script>
-
-
-
-
-
-
-
-
 
 <!-- ══ MUSIC PLAYER ════════════════════════════════════════════════ -->
 <style>
