@@ -290,18 +290,15 @@ table.tt tr:last-child td{border-bottom:none}
 .actual-in:focus{border-color:var(--blue)}
 .auto-tag{font-size:9px;background:rgba(59,130,246,.15);color:var(--blue);padding:1px 5px;border-radius:6px;font-weight:600;white-space:nowrap}
 
-/* REMINDER BANNER */
+/* TOAST */
 #reminder-banner{display:none;position:fixed;top:50px;left:0;right:0;z-index:190;
   background:linear-gradient(90deg,#7c2d00,#c2410c);border-bottom:2px solid #f97316;
-  padding:10px 16px;text-align:center;animation:bannerPulse 2s infinite}
+  padding:10px 60px 10px 16px;text-align:center;animation:bannerPulse 2s infinite}
 @keyframes bannerPulse{0%,100%{opacity:1}50%{opacity:.85}}
 #reminder-banner .rb-text{color:#fff;font-size:13px;font-weight:600}
 #reminder-banner .rb-text span{color:#fbbf24}
-#reminder-banner .rb-close{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+.rb-close{position:absolute;right:12px;top:50%;transform:translateY(-50%);
   background:none;border:none;color:#fff;font-size:18px;cursor:pointer;opacity:.7}
-#reminder-banner .rb-close:hover{opacity:1}
-
-/* TOAST */
 .toast{position:fixed;bottom:24px;right:24px;background:#1a5c38;border:1px solid #22c55e;
   color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:999;
   transform:translateY(80px);opacity:0;transition:.3s;pointer-events:none}
@@ -645,16 +642,31 @@ table.tt tr:last-child td{border-bottom:none}
     <div id="user-pill" onclick="openUserModal()">Select User</div>
     <button id="admin-btn" onclick="openManageUsers()" style="display:none;background:rgba(245,197,24,.15);border:1px solid rgba(245,197,24,.3);color:var(--gold);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">👑 Users</button>
     <button id="wa-btn" onclick="openWaModal()" style="display:none;background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.3);color:#25D366;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">📲 Remind</button>
+    <button id="admin-btn" onclick="openManageUsers()" style="display:none;background:rgba(245,197,24,.15);border:1px solid rgba(245,197,24,.3);color:var(--gold);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">👑 Users</button>
   </div>
 </nav>
 
 
-<!-- ══ REMINDER BANNER ═══════════════════════════════════════════ -->
-<div id="reminder-banner">
-  <span class="rb-text" id="reminder-text">⚠️ You have missing predictions!</span>
+<!-- REMINDER BANNER -->
+<div id="reminder-banner" style="position:relative">
+  <span class="rb-text" id="reminder-text">⚠️ Missing predictions!</span>
   <button class="rb-close" onclick="document.getElementById('reminder-banner').style.display='none'">✕</button>
 </div>
-
+<!-- WHATSAPP MODAL -->
+<div id="wa-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:700;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 32px;width:460px;max-width:94vw;max-height:85vh;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#25D366;margin:0">📲 WhatsApp Reminders</h2>
+      <button onclick="closeWaModal()" style="background:var(--card2);border:1px solid var(--border);color:var(--grey);border-radius:8px;padding:5px 12px;cursor:pointer">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--grey)">Enter each player's WhatsApp number. Click Send to open a personalised reminder.</div>
+    <div id="wa-player-list" style="overflow-y:auto;display:flex;flex-direction:column;gap:8px;max-height:50vh"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="sendWaAll()" style="flex:1;padding:10px;background:#25D366;color:#fff;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">📲 Send All</button>
+      <button onclick="saveWaNumbers()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">💾 Save</button>
+    </div>
+  </div>
+</div>
 <!-- ══ CELEBRATION OVERLAY ════════════════════════════════════════ -->
 <canvas id="confetti-canvas"></canvas>
 <div id="celebration">
@@ -694,22 +706,6 @@ table.tt tr:last-child td{border-bottom:none}
     <div class="grp-modal-btns">
       <button class="grp-modal-cancel" onclick="closeGrpModal()">Cancel</button>
       <button class="grp-modal-ok" onclick="saveGrpModal()">Create Group</button>
-    </div>
-  </div>
-</div>
-
-<!-- WHATSAPP REMINDER MODAL (admin only) -->
-<div id="wa-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:700;align-items:center;justify-content:center">
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 32px;width:460px;max-width:94vw;max-height:85vh;display:flex;flex-direction:column;gap:14px">
-    <div style="display:flex;align-items:center;justify-content:space-between">
-      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#25D366;margin:0">📲 WhatsApp Reminders</h2>
-      <button onclick="closeWaModal()" style="background:var(--card2);border:1px solid var(--border);color:var(--grey);border-radius:8px;padding:5px 12px;cursor:pointer">✕</button>
-    </div>
-    <div style="font-size:12px;color:var(--grey)">Store player WhatsApp numbers. Click Send to open WhatsApp with a personalised reminder.</div>
-    <div id="wa-player-list" style="overflow-y:auto;display:flex;flex-direction:column;gap:8px;max-height:50vh"></div>
-    <div style="display:flex;gap:8px">
-      <button onclick="sendWaAll()" style="flex:1;padding:10px;background:#25D366;color:#fff;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">📲 Send All Reminders</button>
-      <button onclick="saveWaNumbers()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">💾 Save Numbers</button>
     </div>
   </div>
 </div>
@@ -960,19 +956,43 @@ const ALL = [...GM, ...KO];
 
 // ── KNOWN RESULTS (pre-seeded, updated as games finish) ─────────────
 // These ensure results appear even if API sync fails
-// No hardcoded results — all scores come exclusively from the live API
-// (worldcup26.ir / wc2026api.com). This prevents wrong scores ever being seeded.
-const KNOWN_RESULTS = {};
+const KNOWN_RESULTS = {
+  M001: {hg:2, ag:0, source:'confirmed-final', locked:true, final:true, status:'FT', ts:1749679200000, lockedAt:'2026-06-11T22:00:00.000Z'}, // Mexico 2-0 South Africa
+};
+// All other results come from the live API (worldcup26.ir / wc2026api.com)
+// Never hardcode scores here — use the API to get accurate results
 
 function seedKnownResults() {
-  // No-op — all results come from the live API only
-  // Never hardcode scores here to avoid wrong data being permanently stored
+  Object.entries(KNOWN_RESULTS).forEach(([mid, res]) => {
+    const existing = la()[mid];
+    // Only seed if not already saved (locked takes priority)
+    if(!existing || !existing.locked) {
+      saOne(mid, res);
+    }
+  });
 }
 
-// On load: clear any non-manual actuals that have old locked/confirmed-final flags
-// These were wrongly set by previous code versions and block API updates
+// One-time cleanup: force-delete wrongly guessed scores from Firebase
+// Reads DIRECTLY from Firebase (bypasses cache) to ignore locked flags
 async function clearBadGuessedResults() {
-  // No-op — lock logic is fixed, no cleanup needed anymore
+  const BAD = {
+    M003: {hg:0, ag:2}, // Canada vs Bosnia — wrong guess
+    M004: {hg:3, ag:1}, // USA vs Paraguay — wrong guess
+  };
+  try {
+    const fbActuals = await fbGet('actuals') || {};
+    for(const [mid, bad] of Object.entries(BAD)) {
+      const stored = fbActuals[mid];
+      if(stored && stored.hg === bad.hg && stored.ag === bad.ag) {
+        // Delete from Firebase and cache — live API will fill in the real score
+        await fbSet(`actuals/${mid}`, null);
+        const actuals = Object.assign({}, la());
+        delete actuals[mid];
+        _cache['actuals'] = actuals;
+        console.log(`Cleared wrong guessed score for ${mid}`);
+      }
+    }
+  } catch(e) {}
 }
 
 const STAGES = [
@@ -1206,20 +1226,19 @@ function hasActualScore(mid){
 }
 function isActualFinalLocked(mid){
   const a = la()[mid];
-  // Only lock manual entries — API results can always be overwritten with fresher data
-  return !!(a && hasActualScore(mid) && a.source === 'manual');
+  return !!(a && hasActualScore(mid) && (a.locked === true || a.final === true || a.status === 'FT' || a.source === 'auto-final' || a.source === 'confirmed-final'));
 }
 function finaliseActualObject(res){
-  const isManual = res.source === 'manual';
-  const out = {
+  return Object.assign({}, res, {
     hg: Number(res.hg),
     ag: Number(res.ag),
-    source: isManual ? 'manual' : 'api',
-    ts: res.ts || Date.now(),
-  };
-  // Only manual entries get locked — API entries are always overwriteable
-  if(isManual) out.locked = true;
-  return out;
+    locked: true,
+    final: true,
+    status: 'FT',
+    source: res.source && String(res.source).includes('confirmed') ? 'confirmed-final' : 'auto-final',
+    lockedAt: res.lockedAt || new Date().toISOString(),
+    ts: res.ts || Date.now()
+  });
 }
 function shouldSkipActualFetch(mid){
   return isActualFinalLocked(mid);
@@ -1335,13 +1354,13 @@ async function bootstrapData() {
       _cache[`pred_${u}`] = merged2;
     });
 
-    // ── Parse actuals — remote wins unless local was manually entered
+    // ── Parse actuals — remote wins, but never erase a locked local result
     if(all.actuals) {
       const localAct = la();
       const merged = Object.assign({}, localAct);
       Object.keys(all.actuals).forEach(mid => {
         const loc = localAct[mid];
-        if(!loc || loc.source !== 'manual') {
+        if(!loc || !loc.locked || all.actuals[mid]?.locked) {
           merged[mid] = all.actuals[mid];
         }
       });
@@ -1467,15 +1486,15 @@ function applySnapshot(all) {
   if(all.real_bracket && typeof all.real_bracket === 'object') {
     _cache['real_bracket'] = all.real_bracket;
   }
-  // Actuals — remote always wins UNLESS local entry was manually entered
+  // Actuals — remote wins EXCEPT for locally-locked results (manual or confirmed)
   if(all.actuals) {
     const local = la();
     const remote = all.actuals;
     const merged = Object.assign({}, local);
     Object.keys(remote).forEach(mid => {
       const localEntry = local[mid];
-      // Only protect manually-entered scores from being overwritten
-      if(!localEntry || localEntry.source !== 'manual') {
+      // Only overwrite local if local isn't locked, or if remote has a locked result too
+      if(!localEntry || !localEntry.locked || remote[mid]?.locked) {
         merged[mid] = remote[mid];
       }
     });
@@ -1487,21 +1506,6 @@ function applySnapshot(all) {
     acts: JSON.stringify(la())
   });
   return snapBefore !== snapAfter;
-}
-
-// Call debugApiResults() in browser console (F12) to diagnose
-async function debugApiResults() {
-  console.log('Calling Netlify sync function...');
-  try {
-    const r = await fetch('/.netlify/functions/sync-results');
-    const data = await r.json();
-    console.log('Result:', data);
-    if(data.updates) {
-      Object.entries(data.updates).forEach(([mid, res]) => {
-        console.log(`✅ ${mid}: ${res.hg}-${res.ag}`);
-      });
-    }
-  } catch(e) { console.error('Error:', e); }
 }
 
 function refreshUI() {
@@ -1569,74 +1573,34 @@ const MOATAZ={M001:{hg:2,ag:1},M002:{hg:3,ag:1},M003:{hg:1,ag:1},M004:{hg:2,ag:1
 // Fallback: worldcup26.ir  — free, no key, finished="TRUE" when done
 // Both polled via allorigins CORS proxy
 
-// Multiple CORS proxies — try each until one works
-const PROXIES = [
-  'https://corsproxy.io/?',
-  'https://api.codetabs.com/v1/proxy?quest=',
-  'https://api.allorigins.win/raw?url=',
-  'https://thingproxy.freeboard.io/fetch/',
-];
-
-async function fetchWithProxy(url) {
-  for(const proxy of PROXIES) {
-    try {
-      const r = await fetch(proxy + encodeURIComponent(url), {
-        cache: 'no-cache',
-        signal: AbortSignal.timeout(8000)
-      });
-      if(r.ok) {
-        const text = await r.text();
-        if(text && text.length > 10) return text;
-      }
-    } catch(e) { /* try next proxy */ }
-  }
-  throw new Error('All proxies failed');
-}
+const PROXY = 'https://api.allorigins.win/raw?url=';
 
 // Match our internal M001-M104 IDs to the APIs' numeric match IDs (1-104)
 // wc2026api: match_number field (1=M001, 2=M002 ... 104=M104)
 // worldcup26: id field (same mapping)
 
 function parseWC2026Api(raw) {
+  // wc2026api.com format: [{match_number, home_team, away_team, home_score, away_score, phase, status}]
   let data;
   try { data = JSON.parse(raw); } catch { return {}; }
   const arr = Array.isArray(data) ? data : (data.matches || data.data || []);
   const out = {};
   arr.forEach(m => {
+    const num = m.match_number || m.id;
+    if(!num) return;
+    // Only take finished matches
     if(m.phase !== 'FT' && m.phase !== 'FT_PEN' && m.status !== 'finished' && m.status !== 'FT') return;
     const hg = m.home_score ?? m.score?.home;
     const ag = m.away_score ?? m.score?.away;
     if(hg == null || ag == null) return;
-
-    // Match by team names first
-    const homeApi = normTeam(String(m.home_team || m.home || '').trim());
-    const awayApi = normTeam(String(m.away_team || m.away || '').trim());
-    let mid = null;
-
-    if(homeApi && awayApi) {
-      const found = ALL.find(x =>
-        teamsMatch(homeApi,x[4]) && teamsMatch(awayApi,x[5])
-      ) || ALL.find(x =>
-        teamsMatch(homeApi,x[5]) && teamsMatch(awayApi,x[4])
-      );
-      if(found) mid = found[0];
-    }
-
-    // Fallback: numeric ID
-    if(!mid) {
-      const num = m.match_number || m.id;
-      if(num) {
-        const candidate = 'M' + String(parseInt(num)).padStart(3,'0');
-        if(ALL.some(x => x[0] === candidate)) mid = candidate;
-      }
-    }
-
-    if(mid) out[mid] = {hg: +hg, ag: +ag, source: 'api', ts: Date.now()};
+    const mid = 'M' + String(num).padStart(3,'0');
+    out[mid] = {hg: +hg, ag: +ag, source: 'wc2026api', ts: Date.now()};
   });
   return out;
 }
 
 function parseWorldcup26(raw) {
+  // worldcup26.ir format: {games: [{id, home_score, away_score, finished, home_team_name_en, away_team_name_en}]}
   let data;
   try { data = JSON.parse(raw); } catch { return {}; }
   const arr = data.games || (Array.isArray(data) ? data : []);
@@ -1646,38 +1610,21 @@ function parseWorldcup26(raw) {
     const hg = parseFloat(g.home_score);
     const ag = parseFloat(g.away_score);
     if(isNaN(hg) || isNaN(ag)) return;
-
-    // Try matching by team names first (most reliable)
-    const homeApi = normTeam(String(g.home_team_name_en || g.home_team || g.home || '').trim());
-    const awayApi = normTeam(String(g.away_team_name_en || g.away_team || g.away || '').trim());
-    let mid = null;
-
-    if(homeApi && awayApi) {
-      const found = ALL.find(m =>
-        teamsMatch(homeApi,m[4]) && teamsMatch(awayApi,m[5])
-      ) || ALL.find(m =>
-        teamsMatch(homeApi,m[5]) && teamsMatch(awayApi,m[4])
-      );
-      if(found) mid = found[0];
-    }
-
-    // Fallback: match by numeric ID if team names didn't work
-    if(!mid) {
-      const num = parseInt(g.id);
-      if(num && num >= 1 && num <= 104) {
-        const candidate = 'M' + String(num).padStart(3,'0');
-        if(ALL.some(m => m[0] === candidate)) mid = candidate;
-      }
-    }
-
-    if(mid) out[mid] = {hg, ag, source: 'api', ts: Date.now()};
+    const num = parseInt(g.id);
+    if(!num) return;
+    const mid = 'M' + String(num).padStart(3,'0');
+    out[mid] = {hg, ag, source: 'worldcup26', ts: Date.now()};
   });
   return out;
 }
 
 async function fetchResultsFromSource(url, parser) {
-  const text = await fetchWithProxy(url);
-  return parser(text);
+  const r = await fetch(PROXY + encodeURIComponent(url), {
+    cache: 'no-cache',
+    signal: AbortSignal.timeout(12000)
+  });
+  if(!r.ok) throw new Error('HTTP ' + r.status);
+  return parser(await r.text());
 }
 
 
@@ -1701,22 +1648,16 @@ function normalizeApiResultsToActuals(payload, source='api'){
 }
 
 async function fetchAllResults() {
-  // Call our Netlify serverless function — server-side, no CORS issues
   try {
     const r = await fetch('/.netlify/functions/sync-results', {
-      cache: 'no-cache',
-      signal: AbortSignal.timeout(20000)
+      cache: 'no-cache', signal: AbortSignal.timeout(20000)
     });
     const data = await r.json();
-    if(data && data.ok && data.updates && Object.keys(data.updates).length > 0) {
+    if(data && data.ok && data.updates && Object.keys(data.updates).length > 0)
       return data.updates;
-    }
-  } catch(e) {
-    // Function unavailable (e.g. local dev) — silently ignore
-  }
+  } catch(e) {}
   return {};
 }
-
 async function syncResultToFirebase(results) {
   if(!results || !Object.keys(results).length) return;
   let changed = 0;
@@ -1841,9 +1782,23 @@ function stageForMatch(mid) {
   if(m[1] === '3P') return 'Final';
   return m[1];
 }
+function isMatchLocked(mid) {
+  const m = ALL.find(x=>x[0]===mid);
+  if(!m) return true;
+  return Date.now() >= new Date(m[8]).getTime();
+}
+function matchTimeLeft(mid) {
+  const m = ALL.find(x=>x[0]===mid);
+  if(!m) return null;
+  const ms = new Date(m[8]).getTime() - Date.now();
+  if(ms<=0) return null;
+  const h=Math.floor(ms/3600000), min=Math.floor((ms%3600000)/60000);
+  if(h>=24) return `${Math.floor(h/24)}d ${h%24}h`;
+  if(h>0) return `${h}h ${min}m`;
+  return `${min}m`;
+}
 function isPredictionLockedForMatch(mid) {
-  const st = stageForMatch(mid);
-  return !st || isLocked(st);
+  return isMatchLocked(mid);
 }
 function stripLockedPredictionChanges(user, incoming) {
   const existing = lp(user) || {};
@@ -2377,6 +2332,91 @@ document.addEventListener('keydown', e => {
 // ── DYNAMIC USERS ───────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
 // Built-in users + custom users stored in Firebase
+function getNextDeadline() {
+  // Find the next upcoming match deadline across all stages
+  const now = Date.now();
+  let earliest = null;
+  for(const s of STAGES) {
+    // Find unlocked matches in this stage
+    const upcoming = s.mids
+      .map(mid => ALL.find(m=>m[0]===mid))
+      .filter(m => m && new Date(m[8]).getTime() > now)
+      .sort((a,b) => new Date(a[8]) - new Date(b[8]));
+    if(!upcoming.length) continue;
+    const first = upcoming[0];
+    const day = first[3];
+    const candidate = {
+      deadline: first[8],
+      date: day,
+      label: new Date(day).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long'}),
+      mids: upcoming.filter(m=>m[3]===day).map(m=>m[0])
+    };
+    if(!earliest || new Date(candidate.deadline) < new Date(earliest.deadline)) {
+      earliest = candidate;
+    }
+  }
+  return earliest;
+}
+function updateReminderBanner() {
+  const banner=document.getElementById('reminder-banner');
+  const text=document.getElementById('reminder-text');
+  if(!banner||!currentUser){if(banner)banner.style.display='none';return;}
+  const next=getNextDeadline();
+  if(!next){banner.style.display='none';return;}
+  const preds=lp(currentUser);
+  const missing=next.mids.filter(mid=>{const p=preds[mid];return!isMatchLocked(mid)&&(!p||p.hg===undefined);});
+  if(!missing.length){banner.style.display='none';return;}
+  const tl=timeLeft(next.deadline);
+  if(!tl||tl.diff>86400000*2){banner.style.display='none';return;}
+  const urgency=tl.diff<3600000?'🚨':tl.diff<21600000?'⚡':'⚠️';
+  const ts=tl.d>0?`${tl.d}d ${tl.h}h`:tl.h>0?`${tl.h}h ${tl.m}m`:`${tl.m}m`;
+  text.innerHTML=`${urgency} <span>${missing.length} prediction${missing.length!==1?'s':''} missing</span> · Deadline in <span>${ts}</span> · <a href="#" onclick="goTo('predictions',document.querySelectorAll('.nav-btn')[2]);document.getElementById('reminder-banner').style.display='none';return false;" style="color:#fbbf24;text-decoration:underline">Enter now →</a>`;
+  banner.style.display='block';
+}
+let _waNumbers={};
+async function openWaModal(){
+  if(!isAdmin(currentUser))return;
+  try{const s=await fbGet('wa_numbers');_waNumbers=s||{};}catch(e){_waNumbers={};}
+  renderWaPlayerList();
+  document.getElementById('wa-overlay').style.display='flex';
+}
+function closeWaModal(){document.getElementById('wa-overlay').style.display='none';}
+function buildWaMessage(name,missing,timeStr){
+  if(missing===0)return `⚽ Hey ${name}! You're all set for WC2026 — all predictions done. Good luck! 🏆\nmizoprediction.netlify.app`;
+  return `⚽ Hey ${name}! You have *${missing} prediction${missing!==1?'s':''} missing* for WC2026.\n\n⏰ Deadline in *${timeStr}* — don't miss it!\n\n👉 mizoprediction.netlify.app`;
+}
+function renderWaPlayerList(){
+  const list=document.getElementById('wa-player-list');if(!list)return;
+  const next=getNextDeadline();
+  const timeStr=next?(()=>{const tl=timeLeft(next.deadline);if(!tl)return'soon';return tl.d>0?`${tl.d}d ${tl.h}h`:tl.h>0?`${tl.h}h ${tl.m}m`:`${tl.m}m`;})():'soon';
+  list.innerHTML=getAllUsers().map(u=>{
+    const preds=lp(u.name);
+    const missing=next?next.mids.filter(mid=>{const p=preds[mid];return!isMatchLocked(mid)&&(!p||p.hg===undefined);}).length:0;
+    const savedNum=_waNumbers[fbKey(u.name)]||'';
+    const msg=buildWaMessage(u.name,missing,timeStr);
+    const link=savedNum?`https://wa.me/${savedNum.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`:`https://wa.me/?text=${encodeURIComponent(msg)}`;
+    return `<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:28px;height:28px;border-radius:50%;background:${COLORS[u.name]||'#666'}20;color:${COLORS[u.name]||'#666'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">${u.name.charAt(0)}</div><div style="flex:1;font-weight:600;font-size:13px">${u.name}${missing>0?`<span style="color:var(--orange);font-size:11px;font-weight:400"> · ${missing} missing</span>`:'<span style="color:var(--green);font-size:11px;font-weight:400"> · ✅ done</span>'}</div><a href="${link}" target="_blank" style="background:#25D366;color:#fff;border-radius:6px;padding:5px 12px;font:600 12px Inter,sans-serif;text-decoration:none;flex-shrink:0">📲 Send</a></div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;color:var(--grey);flex-shrink:0">📞</span><input type="tel" placeholder="WhatsApp e.g. 201234567890" value="${savedNum}" oninput="_waNumbers['${fbKey(u.name)}']=this.value" style="flex:1;background:var(--pitch);border:1px solid var(--border);color:var(--white);border-radius:6px;padding:5px 10px;font-size:12px;outline:none"></div></div>`;
+  }).join('');
+}
+async function saveWaNumbers(){
+  try{await fbSet('wa_numbers',_waNumbers);showToast('✅ Numbers saved!');}catch(e){showToast('❌ Failed to save');}
+}
+function sendWaAll(){
+  const next=getNextDeadline();
+  const timeStr=next?(()=>{const tl=timeLeft(next.deadline);if(!tl)return'soon';return tl.d>0?`${tl.d}d ${tl.h}h`:tl.h>0?`${tl.h}h ${tl.m}m`:`${tl.m}m`;})():'soon';
+  let opened=0;
+  getAllUsers().forEach(u=>{
+    const num=_waNumbers[fbKey(u.name)];if(!num)return;
+    const preds=lp(u.name);
+    const missing=next?next.mids.filter(mid=>{const p=preds[mid];return!isMatchLocked(mid)&&(!p||p.hg===undefined);}).length:0;
+    if(missing===0)return;
+    const link=`https://wa.me/${num.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(buildWaMessage(u.name,missing,timeStr))}`;
+    setTimeout(()=>window.open(link,'_blank'),opened*800);opened++;
+  });
+  if(opened===0)showToast('No numbers saved or everyone is done!');
+  else showToast(`📲 Opening ${opened} WhatsApp chat${opened!==1?'s':''}…`);
+}
+
 const BUILTIN_USERS = [
   {name:'Khairo', color:'#e85d04'},
   {name:'Moataz', color:'#3b82f6'},
@@ -2384,162 +2424,6 @@ const BUILTIN_USERS = [
 ];
 const ADMINS = ['Moataz']; // Admins can delete any custom user
 function isAdmin(user) { return ADMINS.includes(user); }
-
-// ══════════════════════════════════════════════════════════════════
-// ── REMINDER BANNER ─────────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════
-function updateReminderBanner() {
-  const banner = document.getElementById('reminder-banner');
-  const text = document.getElementById('reminder-text');
-  if(!banner || !currentUser) { if(banner) banner.style.display='none'; return; }
-
-  const next = getNextDeadline();
-  if(!next) { banner.style.display='none'; return; }
-
-  const preds = lp(currentUser);
-  const missing = next.mids.filter(mid => {
-    const p = preds[mid];
-    return !isMatchLocked(mid) && (!p || p.hg === undefined);
-  });
-
-  if(missing.length === 0) { banner.style.display='none'; return; }
-
-  const tl = timeLeft(next.deadline);
-  if(!tl || tl.diff > 86400000 * 2) { banner.style.display='none'; return; } // only show within 2 days
-
-  const urgency = tl.diff < 3600000 ? '🚨' : tl.diff < 21600000 ? '⚡' : '⚠️';
-  const timeStr = tl.d > 0 ? `${tl.d}d ${tl.h}h` : tl.h > 0 ? `${tl.h}h ${tl.m}m` : `${tl.m}m`;
-
-  text.innerHTML = `${urgency} <span>${missing.length} prediction${missing.length!==1?'s':''} missing</span> · Deadline in <span>${timeStr}</span> · <a href="#" onclick="goTo('predictions',document.querySelector('.nav-btn:nth-child(4)'));document.getElementById('reminder-banner').style.display='none';return false;" style="color:#fbbf24;text-decoration:underline">Enter now →</a>`;
-  banner.style.display = 'block';
-}
-
-function getNextDeadline() {
-  for(const s of STAGES) {
-    const next = nextDeadlineInStage(s.key);
-    if(next) return next;
-  }
-  return null;
-}
-
-// ══════════════════════════════════════════════════════════════════
-// ── WHATSAPP REMINDERS ───────────────────────────────────────────
-// ══════════════════════════════════════════════════════════════════
-let _waNumbers = {};
-
-async function openWaModal() {
-  if(!isAdmin(currentUser)) return;
-  // Load saved numbers from Firebase
-  try {
-    const saved = await fbGet('wa_numbers');
-    _waNumbers = saved || {};
-  } catch(e) { _waNumbers = {}; }
-  renderWaPlayerList();
-  document.getElementById('wa-overlay').style.display = 'flex';
-}
-
-function closeWaModal() {
-  document.getElementById('wa-overlay').style.display = 'none';
-}
-
-function renderWaPlayerList() {
-  const list = document.getElementById('wa-player-list');
-  if(!list) return;
-  const all = getAllUsers();
-  const builtins = BUILTIN_USERS.map(u=>u.name);
-
-  // Build deadline info for message
-  const next = getNextDeadline();
-  const timeStr = next ? (() => {
-    const tl = timeLeft(next.deadline);
-    if(!tl) return 'soon';
-    return tl.d > 0 ? `${tl.d}d ${tl.h}h` : tl.h > 0 ? `${tl.h}h ${tl.m}m` : `${tl.m}m`;
-  })() : 'soon';
-
-  list.innerHTML = all.map(u => {
-    const preds = lp(u.name);
-    const missing = next ? next.mids.filter(mid => {
-      const p = preds[mid];
-      return !isMatchLocked(mid) && (!p || p.hg === undefined);
-    }).length : 0;
-    const savedNum = _waNumbers[fbKey(u.name)] || '';
-    const msg = buildWaMessage(u.name, missing, timeStr);
-    const waLink = savedNum
-      ? `https://wa.me/${savedNum.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`
-      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-
-    return `<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <div style="width:28px;height:28px;border-radius:50%;background:${COLORS[u.name]||'#666'}20;color:${COLORS[u.name]||'#666'};
-          display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">${u.name.charAt(0)}</div>
-        <div style="flex:1;font-weight:600;font-size:13px">${u.name}
-          ${missing>0?`<span style="color:var(--orange);font-size:11px;font-weight:400"> · ${missing} missing</span>`:'<span style="color:var(--green);font-size:11px;font-weight:400"> · ✅ all done</span>'}
-        </div>
-        <a href="${waLink}" target="_blank"
-          style="background:#25D366;color:#fff;border:none;border-radius:6px;padding:5px 12px;
-            font:600 12px Inter,sans-serif;cursor:pointer;text-decoration:none;flex-shrink:0">
-          📲 Send</a>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:11px;color:var(--grey);flex-shrink:0">📞</span>
-        <input type="tel" placeholder="WhatsApp number e.g. 201234567890"
-          value="${savedNum}"
-          onchange="_waNumbers['${fbKey(u.name)}']=this.value"
-          oninput="_waNumbers['${fbKey(u.name)}']=this.value;renderWaPlayerList()"
-          style="flex:1;background:var(--pitch);border:1px solid var(--border);color:var(--white);
-            border-radius:6px;padding:5px 10px;font-size:12px;outline:none;font-family:Inter,sans-serif">
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function buildWaMessage(name, missing, timeStr) {
-  if(missing === 0) {
-    return `⚽ Hey ${name}! You're all set for WC2026 Predictions — all predictions entered. Good luck! 🏆
-mizoprediction.netlify.app`;
-  }
-  return `⚽ Hey ${name}! You have *${missing} prediction${missing!==1?'s':''} missing* for WC2026.
-
-⏰ Deadline in *${timeStr}* — don't miss it!
-
-👉 mizoprediction.netlify.app`;
-}
-
-async function saveWaNumbers() {
-  try {
-    await fbSet('wa_numbers', _waNumbers);
-    showToast('✅ Numbers saved!');
-  } catch(e) { showToast('❌ Failed to save'); }
-}
-
-function sendWaAll() {
-  const all = getAllUsers();
-  const next = getNextDeadline();
-  const timeStr = next ? (() => {
-    const tl = timeLeft(next.deadline);
-    if(!tl) return 'soon';
-    return tl.d>0?`${tl.d}d ${tl.h}h`:tl.h>0?`${tl.h}h ${tl.m}m`:`${tl.m}m`;
-  })() : 'soon';
-
-  // Open WhatsApp for each player who has a number saved and missing predictions
-  let opened = 0;
-  all.forEach(u => {
-    const num = _waNumbers[fbKey(u.name)];
-    if(!num) return;
-    const preds = lp(u.name);
-    const missing = next ? next.mids.filter(mid => {
-      const p = preds[mid];
-      return !isMatchLocked(mid) && (!p || p.hg === undefined);
-    }).length : 0;
-    if(missing === 0) return;
-    const msg = buildWaMessage(u.name, missing, timeStr);
-    const link = `https://wa.me/${num.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`;
-    setTimeout(() => window.open(link, '_blank'), opened * 800); // stagger openings
-    opened++;
-  });
-  if(opened === 0) showToast('No numbers saved or everyone is done!');
-  else showToast(`📲 Opening ${opened} WhatsApp chat${opened!==1?'s':''}…`);
-}
 
 function openManageUsers() {
   if(!isAdmin(currentUser)) return;
@@ -2685,12 +2569,10 @@ function finishLogin(name, color) {
   currentUser = name;
   document.getElementById('user-pill').textContent = `▶ ${name}`;
   document.getElementById('user-pill').style.color = color;
-  // Show admin button for admins
   const adminBtn = document.getElementById('admin-btn');
   if(adminBtn) adminBtn.style.display = isAdmin(name) ? '' : 'none';
   const waBtn = document.getElementById('wa-btn');
   if(waBtn) waBtn.style.display = isAdmin(name) ? '' : 'none';
-  // Load this user's latest predictions from Firebase, then render
   loadPredictions(name).then(() => {
     updateHeroStats();
     renderDashboard();
@@ -2698,7 +2580,6 @@ function finishLogin(name, color) {
     renderPreds();
     renderBracketPred();
     updateReminderBanner();
-    // Refresh banner every minute
     setInterval(updateReminderBanner, 60000);
   });
 }
@@ -4248,45 +4129,43 @@ document.addEventListener('click', e => {
 // ═══════════════════════════════════════════════════════════════════
 // ── INIT ────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
-// ── Helper: fetch live results and sync immediately ──────────────────
-function fetchAndSyncResults() {
-  return fetchAllResults()
-    .then(r => { if(r && Object.keys(r).length) return syncResultToFirebase(r); })
-    .catch(() => {});
-}
-
 try {
   // Show loading state in modal while Firebase fetches
   const elModal = document.getElementById('modal-users-list');
   if(elModal) elModal.innerHTML = '<div style="padding:20px;text-align:center;color:var(--grey);font-size:13px"><div style="font-size:22px;margin-bottom:8px">⏳</div>Loading players…</div>';
 
+  seedKnownResults(); // Apply any pre-known results immediately
   renderDashboard();
 
-  // ── Fire BOTH Firebase + live results at exactly the same time ──────
-  // Nothing waits for anything else — fully parallel
-  Promise.all([
-    // 1. Clean old bad data then fetch fresh results
-    clearBadGuessedResults().then(() => fetchAndSyncResults()),
-    // 2. Load all Firebase data (users, predictions, groups etc)
-    bootstrapData().then(() => {
-      syncUserGlobals();
-      rebuildUserModalList();
-      renderDashboard();
-      startPolling();
-      scheduleAllResultFetches();
-      setTimeout(checkStageCompletions, 2000);
-    })
-  ]).catch(() => {
+  // ── Clear any previously wrong guessed scores first, then fetch live ──
+  clearBadGuessedResults().then(() => {
+    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+  }).catch(() => {
+    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+  });
+
+  // Bootstrap: fetch all users + predictions from Firebase FIRST
+  bootstrapData().then(() => {
+    syncUserGlobals();        // rebuild USERS array with Firebase users
+    rebuildUserModalList();   // show final user list in modal
+    renderDashboard();
+    startPolling();           // real-time SSE sync
+    scheduleAllResultFetches(); // schedule post-match result fetches
+    setTimeout(checkStageCompletions, 2000); // check for stage celebrations
+    // Second result fetch after Firebase is ready — catches anything missed
+    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+  }).catch(e => {
     syncUserGlobals();
     rebuildUserModalList();
     startPolling();
   });
 
-  // Re-fetch results every time user returns to the tab
+  // Re-fetch results when user comes back to the tab
   document.addEventListener('visibilitychange', () => {
-    if(!document.hidden) fetchAndSyncResults();
+    if(!document.hidden) {
+      fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+    }
   });
-
 } catch(e) {
   syncUserGlobals();
   rebuildUserModalList();
@@ -4379,23 +4258,18 @@ try {
         onReady:function(e){
           e.target.setVolume(35);
           updateLabel();
-          // Auto-play on load — browsers allow this after any user interaction
-          // We attach a one-time click listener to the whole page
-          var played = false;
+          var played=false;
           function tryPlay(){
-            if(played) return;
-            played = true;
-            try { e.target.playVideo(); } catch(err){}
-            document.removeEventListener('click', tryPlay);
-            document.removeEventListener('keydown', tryPlay);
-            document.removeEventListener('touchstart', tryPlay);
+            if(played)return;played=true;
+            try{e.target.playVideo();}catch(err){}
+            document.removeEventListener('click',tryPlay);
+            document.removeEventListener('keydown',tryPlay);
+            document.removeEventListener('touchstart',tryPlay);
           }
-          // Try immediately (works if page was already interacted with)
-          try { e.target.playVideo(); } catch(err){}
-          // Also try on first user interaction (for fresh page loads)
-          document.addEventListener('click', tryPlay);
-          document.addEventListener('keydown', tryPlay);
-          document.addEventListener('touchstart', tryPlay);
+          try{e.target.playVideo();}catch(err){}
+          document.addEventListener('click',tryPlay);
+          document.addEventListener('keydown',tryPlay);
+          document.addEventListener('touchstart',tryPlay);
         },
         onStateChange:function(e){
           if(e.data===YT.PlayerState.PLAYING){
