@@ -661,7 +661,6 @@ table.tt tr:last-child td{border-bottom:none}
   <div class="nav-right">
     <div id="user-pill" onclick="openUserModal()">Select User</div>
     <button id="admin-btn" onclick="openManageUsers()" style="display:none;background:rgba(245,197,24,.15);border:1px solid rgba(245,197,24,.3);color:var(--gold);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">👑 Users</button>
-    <button id="fix-btn" onclick="runSwapFix()" style="display:none;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:var(--red);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">🔧 Fix M009</button>
     <button id="email-btn" onclick="openEmailModal()" style="display:none;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#3b82f6;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">📧 Remind</button>
   </div>
 </nav>
@@ -2743,54 +2742,6 @@ async function sendEmailAllMissing(){
 }
 
 
-async function runSwapFix() {
-  const btn = document.getElementById('fix-btn');
-  if(btn) { btn.textContent = '⏳ Fixing...'; btn.disabled = true; }
-  try {
-    // Check flag
-    const done = await fbGet('_fixes/swap_m009_m010_v3');
-    if(done) { showToast('✅ Already fixed!'); if(btn){btn.textContent='✅ Done';} return; }
-
-    // Swap actuals using cache
-    const acts = Object.assign({}, la());
-    const a009 = acts['M009'] ? {...acts['M009']} : null;
-    const a010 = acts['M010'] ? {...acts['M010']} : null;
-    await fbSet('actuals/M009', a010);
-    await fbSet('actuals/M010', a009);
-    if(a010) acts['M009']=a010; else delete acts['M009'];
-    if(a009) acts['M010']=a009; else delete acts['M010'];
-    _cache['actuals'] = acts;
-    console.log('Actuals swapped');
-
-    // Swap predictions for all users using cache
-    for(const u of getAllUsers()) {
-      const key = fbKey(u.name);
-      const up = Object.assign({}, lp(u.name));
-      const p009 = up['M009'] ? {...up['M009']} : null;
-      const p010 = up['M010'] ? {...up['M010']} : null;
-      if(!p009 && !p010) continue;
-      const updated = Object.assign({}, up);
-      if(p010) updated['M009']=p010; else delete updated['M009'];
-      if(p009) updated['M010']=p009; else delete updated['M010'];
-      await fbSet(`predictions/${key}`, updated);
-      _cache[`pred_${u.name}`] = updated;
-      console.log(`Fixed ${u.name}`);
-    }
-
-    await fbSet('_fixes/swap_m009_m010_v3', true);
-    showToast('✅ M009/M010 fixed for all users!');
-    if(btn) { btn.textContent='✅ Done'; btn.style.display='none'; }
-    renderDashboard();
-    updateHeroStats();
-    if(document.getElementById('predictions')?.classList.contains('act')) renderPreds();
-    if(document.getElementById('compare')?.classList.contains('act')) renderCompare();
-  } catch(e) {
-    console.error('Fix failed:', e);
-    showToast('❌ Fix failed: ' + e.message);
-    if(btn) { btn.textContent='🔧 Fix M009'; btn.disabled=false; }
-  }
-}
-
 const BUILTIN_USERS = [
   {name:'Khairo', color:'#e85d04'},
   {name:'Moataz', color:'#3b82f6'},
@@ -2945,8 +2896,7 @@ function finishLogin(name, color) {
   document.getElementById('user-pill').style.color = color;
   const adminBtn = document.getElementById('admin-btn');
   if(adminBtn) adminBtn.style.display = isAdmin(name) ? '' : 'none';
-  const fixBtn = document.getElementById('fix-btn');
-  if(fixBtn) fixBtn.style.display = isAdmin(name) ? '' : 'none';
+
   const emailBtn = document.getElementById('email-btn');
   if(emailBtn) emailBtn.style.display = isAdmin(name) ? '' : 'none';
   loadPredictions(name).then(() => {
