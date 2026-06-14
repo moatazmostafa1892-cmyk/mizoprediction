@@ -660,6 +660,7 @@ table.tt tr:last-child td{border-bottom:none}
   <button class="nav-btn" onclick="goTo('compare',this)">Compare</button>
   <div class="nav-right">
     <div id="user-pill" onclick="openUserModal()">Select User</div>
+    <button id="debug-btn" onclick="debugActuals()" style="display:none;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#3b82f6;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">🔍 Debug</button>
     <button id="admin-btn" onclick="openManageUsers()" style="display:none;background:rgba(245,197,24,.15);border:1px solid rgba(245,197,24,.3);color:var(--gold);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">👑 Users</button>
     <button id="fix-swap-btn" onclick="runSwapFix()" style="display:none;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:var(--red);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">🔧 Fix Swap</button>
     <button id="email-btn" onclick="openEmailModal()" style="display:none;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#3b82f6;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">📧 Remind</button>
@@ -1039,9 +1040,9 @@ async function clearBadGuessedResults() {
 }
 
 const STAGES = [
-  {key:'MD1',  label:'Matchday 1',    deadline:'2026-06-11T19:00:00Z', mids:GM.filter(m=>m[1]==='MD1').map(m=>m[0])},
-  {key:'MD2',  label:'Matchday 2',    deadline:'2026-06-18T16:00:00Z', mids:GM.filter(m=>m[1]==='MD2').map(m=>m[0])},
-  {key:'MD3',  label:'Matchday 3',    deadline:'2026-06-24T19:00:00Z', mids:GM.filter(m=>m[1]==='MD3').map(m=>m[0])},
+  {key:'MD1',  label:'Matchday 1',    deadline:'2026-06-18T16:00:00Z', mids:GM.filter(m=>m[1]==='MD1').map(m=>m[0])},
+  {key:'MD2',  label:'Matchday 2',    deadline:'2026-06-24T19:00:00Z', mids:GM.filter(m=>m[1]==='MD2').map(m=>m[0])},
+  {key:'MD3',  label:'Matchday 3',    deadline:'2026-06-28T19:00:00Z', mids:GM.filter(m=>m[1]==='MD3').map(m=>m[0])},
   {key:'R32',  label:'Round of 32',   deadline:'2026-06-28T20:00:00Z', mids:KO.filter(m=>m[1]==='R32').map(m=>m[0])},
   {key:'R16',  label:'Round of 16',   deadline:'2026-07-04T20:00:00Z', mids:KO.filter(m=>m[1]==='R16').map(m=>m[0])},
   {key:'QF',   label:'Quarterfinals', deadline:'2026-07-09T20:00:00Z', mids:KO.filter(m=>m[1]==='QF').map(m=>m[0])},
@@ -2786,6 +2787,22 @@ async function runSwapFix() {
   }
 }
 
+async function debugActuals() {
+  const acts = la();
+  const lines = Object.entries(acts).sort().map(([mid,v]) =>
+    `${mid}: ${v.hg}-${v.ag} (${v.source||'?'})`
+  ).join('\n');
+  alert('Firebase Actuals:\n\n' + (lines || 'EMPTY') + '\n\nTotal: ' + Object.keys(acts).length);
+}
+
+async function clearAllActuals() {
+  if(!confirm('Delete ALL actuals from Firebase? API will refetch them.')) return;
+  await fbSet('actuals', null);
+  _cache['actuals'] = {};
+  showToast('✅ Actuals cleared - API will refetch');
+  renderDashboard();
+}
+
 const BUILTIN_USERS = [
   {name:'Khairo', color:'#e85d04'},
   {name:'Moataz', color:'#3b82f6'},
@@ -2940,6 +2957,8 @@ function finishLogin(name, color) {
   document.getElementById('user-pill').style.color = color;
   const adminBtn = document.getElementById('admin-btn');
   if(adminBtn) adminBtn.style.display = isAdmin(name) ? '' : 'none';
+  const debugBtn = document.getElementById('debug-btn');
+  if(debugBtn) debugBtn.style.display = isAdmin(name) ? '' : 'none';
   const fixSwapBtn = document.getElementById('fix-swap-btn');
   if(fixSwapBtn) {
     // Only show if fix hasn't been done yet
