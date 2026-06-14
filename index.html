@@ -6,7 +6,7 @@
 <title>⚽ WC 2026 Predictions</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=U4eohS6xv4rwbVn5hErE1jb0YfqwGI_PMiwb5T-H_fpEKSdZh6CKfBZMDN8PpM8Z7S39EOQaq6ACGDMGmk8z2MU3VV7sVvPURGyrfPDLiKszAj6zfk-NMDyD0L0DIS79r7SsIhLY1XMQv0_3JC2PPMIjGS_QFO3jCfnXeeObxRflbV50ZRa9BAaJWjPKFAhI0ULK0N9QWTgn2DineEVa0YdVU2xeqIYrgC8l6is5-1gNH5PGwB1RaRcZ-KRQx2APUPX6dcLPN564IVB3MMuhADRpBeeFx1d0gahsrVsLFlhatYRRHT_y46g5DdCiT1QjmIPV18I1X1gZ0LuSIdtJ4o6djrGCqTgRHiLMnNDXQ9A" charset="UTF-8"></script><style>
+<style>
 :root{
   --pitch:#071a0f;--card:#0b2015;--card2:#0f2a1c;--border:#1a3a26;
   --gold:#f5c518;--gold2:#b8941a;--white:#eef4ee;--grey:#6b8a76;
@@ -276,12 +276,12 @@ table.tt tr:last-child td{border-bottom:none}
 /* COMPARE */
 .cmp-scroll{overflow-x:auto;width:100%;padding-bottom:6px}
 .cmp-section{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow-x:auto;margin-bottom:14px}
-.cmp-hd-row{display:grid;grid-template-columns:260px repeat(var(--user-count,3),minmax(140px,1fr)) 110px;min-width:max-content;background:var(--card2);border-bottom:1px solid var(--border)}
+.cmp-hd-row{display:grid;grid-template-columns:160px repeat(var(--user-count,3),minmax(140px,1fr)) 110px;min-width:max-content;background:var(--card2);border-bottom:1px solid var(--border)}
 .cmp-hd-cell{padding:8px 11px;font-size:11px;font-weight:600;color:var(--grey);letter-spacing:1px;text-transform:uppercase}
-.cmp-data-row{display:grid;grid-template-columns:260px repeat(var(--user-count,3),minmax(140px,1fr)) 110px;min-width:max-content;border-bottom:1px solid rgba(255,255,255,.04)}
+.cmp-data-row{display:grid;grid-template-columns:160px repeat(var(--user-count,3),minmax(140px,1fr)) 110px;min-width:max-content;border-bottom:1px solid rgba(255,255,255,.04)}
 .cmp-data-row:last-child{border-bottom:none}
 .cmp-cell{padding:8px 11px;font-size:12px}
-.cmp-cell.match{color:var(--white);font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px}
+.cmp-cell.match{color:var(--grey);font-size:11px}
 .cmp-ok{color:var(--green)}.cmp-no{color:var(--red)}.cmp-exact{color:var(--gold);font-weight:700}
 .actual-wrap{display:flex;align-items:center;gap:4px}
 .actual-in{width:56px;background:var(--pitch);border:1px solid var(--border);color:var(--blue);
@@ -308,7 +308,7 @@ table.tt tr:last-child td{border-bottom:none}
   .sc-in{width:28px;height:28px;font-size:13px}
   .lb-row{grid-template-columns:26px 1fr repeat(3,42px)}
   .dl-banner{flex-direction:column;gap:10px}
-  .cmp-hd-row,.cmp-data-row{grid-template-columns:210px repeat(var(--user-count,3),minmax(120px,1fr)) 90px}
+  .cmp-hd-row,.cmp-data-row{grid-template-columns:120px repeat(var(--user-count,3),minmax(120px,1fr)) 90px}
 }
 
 /* Real bracket sub-tabs */
@@ -503,7 +503,7 @@ table.tt tr:last-child td{border-bottom:none}
   .sc-center{padding:6px 5px}
   .sc-in{width:30px;height:30px;font-size:14px}
 
-  .cmp-hd-row,.cmp-data-row{grid-template-columns:200px repeat(var(--user-count,3),minmax(96px,1fr)) 86px!important}
+  .cmp-hd-row,.cmp-data-row{grid-template-columns:118px repeat(var(--user-count,3),minmax(96px,1fr)) 86px!important}
   .cmp-hd-cell,.cmp-cell{padding:7px 6px;font-size:11px}
 }
 
@@ -581,41 +581,54 @@ table.tt tr:last-child td{border-bottom:none}
 
 
 
-/* ── COMPARE TABLE ONE-LINE MATCH DESIGN ────────────────────────── */
+/* ── SAFE LIGHTWEIGHT ALIGNMENT FIXES ───────────────────────────────
+   No startup/render logic changed. Only compact, single-line UI. */
 .cmp-hd-row,.cmp-data-row{
-  grid-template-columns:260px repeat(var(--user-count,3),minmax(140px,1fr)) 110px;
+  grid-template-columns:minmax(230px,280px) repeat(var(--user-count,3),minmax(128px,1fr)) 120px;
 }
 .cmp-cell.match{
   color:var(--white);
   font-size:12px;
-  font-weight:800;
+  font-weight:700;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
   display:flex;
   align-items:center;
-  gap:8px;
 }
-.cmp-match-name{
-  display:inline-block;
-  max-width:100%;
+.cmp-match-line{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-width:0;
   overflow:hidden;
   text-overflow:ellipsis;
-  white-space:nowrap;
 }
-.cmp-vs{
-  color:var(--gold);
-  font-size:10px;
-  font-weight:900;
-  letter-spacing:1px;
-  text-transform:uppercase;
-  flex:0 0 auto;
+.cmp-match-line span{color:var(--grey);font-size:10px;text-transform:uppercase;font-weight:800}
+.cmp-mini{
+  width:100%;
+  min-height:30px;
+  border-radius:9px;
+  justify-content:center;
 }
+.mcard{
+  grid-template-columns:minmax(0,1fr) 128px minmax(0,1fr) 46px;
+  min-height:54px;
+}
+.mcard.result-card{
+  grid-template-columns:minmax(0,1fr) 210px minmax(0,1fr) 46px;
+}
+.tside{min-width:0}
+.tname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}
+.pred-line{min-height:28px}
+.result-note{font-size:10px;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:640px){
-  .cmp-hd-row,.cmp-data-row{
-    grid-template-columns:205px repeat(var(--user-count,3),minmax(96px,1fr)) 86px!important;
-  }
-  .cmp-cell.match{font-size:11px;gap:5px}
+  .cmp-hd-row,.cmp-data-row{grid-template-columns:190px repeat(var(--user-count,3),minmax(96px,1fr)) 92px!important}
+  .cmp-cell.match{font-size:11px}
+  .cmp-match-line{gap:5px}
+  .mcard{grid-template-columns:minmax(0,1fr) 92px minmax(0,1fr) 34px;min-height:50px}
+  .mcard.result-card{grid-template-columns:minmax(0,1fr) 135px minmax(0,1fr) 34px}
+  .status-chip{font-size:7px;padding:1px 4px}
 }
 
 </style>
@@ -986,9 +999,6 @@ table.tt tr:last-child td{border-bottom:none}
 </div>
 
 <script>
-
-// Mobile performance guard: phones should not render heavy sections or run result polling at startup.
-const MOBILE_LITE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 700;
 
 // ═══════════════════════════════════════════════════════════════════
 // ── MATCH DATA ──────────────────────────────────────────────────────
@@ -1679,16 +1689,6 @@ function refreshUI() {
 function startRealtimeSync() {
   if(!FB_READY) return;
   if(_sseSource) { _sseSource.close(); _sseSource = null; }
-
-  // On phones, EventSource + full Firebase snapshots can make the page feel stuck.
-  // Use a slower lightweight polling fallback instead.
-  if(MOBILE_LITE) {
-    if(_pollTimer) clearInterval(_pollTimer);
-    _pollTimer = setInterval(fallbackPoll, 60000);
-    setTimeout(fallbackPoll, 8000);
-    return;
-  }
-
   try {
     const url = `${FB_URL}/.json?accept=text/event-stream`;
     _sseSource = new EventSource(url);
@@ -1709,18 +1709,17 @@ function startRealtimeSync() {
     });
     _sseSource.onerror = () => {
       if(_sseSource) { _sseSource.close(); _sseSource = null; }
-      if(!_pollTimer) _pollTimer = setInterval(fallbackPoll, MOBILE_LITE ? 60000 : 15000);
+      if(!_pollTimer) _pollTimer = setInterval(fallbackPoll, 5000);
     };
     _sseSource.onopen = () => {
       if(_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
     };
   } catch(e) {
-    _pollTimer = setInterval(fallbackPoll, MOBILE_LITE ? 60000 : 15000);
+    _pollTimer = setInterval(fallbackPoll, 5000);
   }
 }
 
 async function fallbackPoll() {
-  if(document.hidden) return;
   try {
     const all = await fbGet('');
     if(all && applySnapshot(all)) refreshUI();
@@ -3069,20 +3068,11 @@ function finishLogin(name, color) {
   loadPredictions(name).then(() => {
     updateHeroStats();
     renderDashboard();
-
-    // IMPORTANT FOR MOBILE SPEED:
-    // Do NOT render Groups, Predictions, Bracket, and Compare all at login.
-    // They are rendered only when the user opens that tab via goTo().
-    const active = document.querySelector('.sec.act')?.id || 'dashboard';
-    if(active === 'groups') renderGroups();
-    else if(active === 'predictions') renderPreds();
-    else if(active === 'bracket-pred') renderBracketPred();
-    else if(active === 'bracket-real') renderRealGroups();
-    else if(active === 'compare') renderCompare();
-
+    renderGroups();
+    renderPreds();
+    renderBracketPred();
     updateReminderBanner();
-    if(window._reminderTimer) clearInterval(window._reminderTimer);
-    window._reminderTimer = setInterval(updateReminderBanner, 60000);
+    setInterval(updateReminderBanner, 60000);
     maybePromptForEmail(name);
   });
 }
@@ -4406,7 +4396,7 @@ function renderCompare(){
   const sid='cmp-grid-style';
   let sel=document.getElementById(sid);
   if(!sel){sel=document.createElement('style');sel.id=sid;document.head.appendChild(sel);}
-  sel.textContent=`.cmp-hd-row,.cmp-data-row{grid-template-columns:260px repeat(${n},minmax(140px,1fr)) 110px;}`;
+  sel.textContent=`.cmp-hd-row,.cmp-data-row{grid-template-columns:minmax(230px,280px) repeat(${n},minmax(128px,1fr)) 120px;}`;
 
   const stageLockedMap={};
   STAGES.forEach(s=>{stageLockedMap[s.key]=isLocked(s.key);});
@@ -4438,7 +4428,7 @@ function renderCompare(){
       const isAuto=act&&act.source&&act.source!=='manual';
       const row=document.createElement('div');
       row.className='cmp-data-row';
-      let html=`<div class="cmp-cell match" title="${home} vs ${away}"><span class="cmp-match-name">${home}</span><span class="cmp-vs">vs</span><span class="cmp-match-name">${away}</span></div>`;
+      let html=`<div class="cmp-cell match"><span class="cmp-match-line"><strong>${home}</strong><span>vs</span><strong>${away}</strong></span></div>`;
 
       cmpUsers.forEach(u=>{
         const p=allPreds[u][mid];
@@ -4655,27 +4645,23 @@ try {
   seedKnownResults(); // Apply any pre-known results immediately
   renderDashboard();
 
-  // Desktop only: result fetching can be slow on phones during first load.
-  if(!MOBILE_LITE) {
-    clearBadGuessedResults().then(() => {
-      fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
-    }).catch(() => {
-      fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
-    });
-  }
+  // ── Clear any previously wrong guessed scores first, then fetch live ──
+  clearBadGuessedResults().then(() => {
+    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+  }).catch(() => {
+    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+  });
 
   // Bootstrap: fetch all users + predictions from Firebase FIRST
   bootstrapData().then(() => {
     syncUserGlobals();        // rebuild USERS array with Firebase users
     rebuildUserModalList();   // show final user list in modal
     renderDashboard();
-    startPolling();           // real-time sync
-    if(!MOBILE_LITE) {
-      scheduleAllResultFetches(); // schedule post-match result fetches
-      setTimeout(checkStageCompletions, 2000); // check for stage celebrations
-      // Second result fetch after Firebase is ready — catches anything missed
-      fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
-    }
+    startPolling();           // real-time SSE sync
+    scheduleAllResultFetches(); // schedule post-match result fetches
+    setTimeout(checkStageCompletions, 2000); // check for stage celebrations
+    // Second result fetch after Firebase is ready — catches anything missed
+    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
   }).catch(e => {
     syncUserGlobals();
     rebuildUserModalList();
@@ -4684,7 +4670,7 @@ try {
 
   // Re-fetch results when user comes back to the tab
   document.addEventListener('visibilitychange', () => {
-    if(!document.hidden && !MOBILE_LITE) {
+    if(!document.hidden) {
       fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
     }
   });
