@@ -6,7 +6,7 @@
 <title>⚽ WC 2026 Predictions</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
-<style>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=KD7gJ3mYeetkY_pyDWFrFzBOBAfdqzu6osHIwDyB4O_TI5QKXGO__xvJfhSIYFSLjZJeOk3OcPIZBF_ushIhwuVUaT5cyxI4Mh6poBRf4z1_Ur4LL9qwutfCMwnOHEfzuR6D1qstvs8y3CgDPioHBfz1tUFbygCeQHXjrJY4LsmmMPpjCBEm6pkgJAoBqaz5W3HOsbICxj6D1PIG-jr7RSefFntVW4Ld_MZ2BDYtDokmchE9hnjmOHmuW6wp4x-oLhYuNZWtHz0ilVvnQcunr7KuaGY3-x_kuWiJvRFsKDjhqWmL5MalkIF4bt-Md0vnAwOUqlKVDVfA9LysV2hRAUp0jCXX1uSgTADP5TqaadA" charset="UTF-8"></script><style>
 :root{
   --pitch:#071a0f;--card:#0b2015;--card2:#0f2a1c;--border:#1a3a26;
   --gold:#f5c518;--gold2:#b8941a;--white:#eef4ee;--grey:#6b8a76;
@@ -508,6 +508,19 @@ table.tt tr:last-child td{border-bottom:none}
 }
 
 </style>
+
+<!-- EmailJS SDK - used for admin email reminders -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  // Replace these three values from your EmailJS account before publishing.
+  const EMAILJS_PUBLIC_KEY = "wcsp6fzLmJ7aMeIJQ";
+  const EMAILJS_SERVICE_ID = "service_szyc7ed";
+  const EMAILJS_TEMPLATE_ID = "template_m8gupbn";
+
+  if (window.emailjs) {
+    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+  }
+</script>
 </head>
 <body>
 
@@ -641,8 +654,7 @@ table.tt tr:last-child td{border-bottom:none}
   <div class="nav-right">
     <div id="user-pill" onclick="openUserModal()">Select User</div>
     <button id="admin-btn" onclick="openManageUsers()" style="display:none;background:rgba(245,197,24,.15);border:1px solid rgba(245,197,24,.3);color:var(--gold);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">👑 Users</button>
-    <button id="wa-btn" onclick="openWaModal()" style="display:none;background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.3);color:#25D366;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">📲 Remind</button>
-    <button id="admin-btn" onclick="openManageUsers()" style="display:none;background:rgba(245,197,24,.15);border:1px solid rgba(245,197,24,.3);color:var(--gold);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">👑 Users</button>
+    <button id="email-btn" onclick="openEmailModal()" style="display:none;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#3b82f6;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">📧 Remind</button>
   </div>
 </nav>
 
@@ -652,18 +664,21 @@ table.tt tr:last-child td{border-bottom:none}
   <span class="rb-text" id="reminder-text">⚠️ Missing predictions!</span>
   <button class="rb-close" onclick="document.getElementById('reminder-banner').style.display='none'">✕</button>
 </div>
-<!-- WHATSAPP MODAL -->
-<div id="wa-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:700;align-items:center;justify-content:center">
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 32px;width:460px;max-width:94vw;max-height:85vh;display:flex;flex-direction:column;gap:14px">
+<!-- EMAIL REMINDER MODAL -->
+<div id="email-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:700;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 32px;width:500px;max-width:94vw;max-height:85vh;display:flex;flex-direction:column;gap:14px">
     <div style="display:flex;align-items:center;justify-content:space-between">
-      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#25D366;margin:0">📲 WhatsApp Reminders</h2>
-      <button onclick="closeWaModal()" style="background:var(--card2);border:1px solid var(--border);color:var(--grey);border-radius:8px;padding:5px 12px;cursor:pointer">✕</button>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:#3b82f6;margin:0">📧 Email Reminders</h2>
+      <button onclick="closeEmailModal()" style="background:var(--card2);border:1px solid var(--border);color:var(--grey);border-radius:8px;padding:5px 12px;cursor:pointer">✕</button>
     </div>
-    <div style="font-size:12px;color:var(--grey)">Enter each player's WhatsApp number. Click Send to open a personalised reminder.</div>
-    <div id="wa-player-list" style="overflow-y:auto;display:flex;flex-direction:column;gap:8px;max-height:50vh"></div>
-    <div style="display:flex;gap:8px">
-      <button onclick="sendWaAll()" style="flex:1;padding:10px;background:#25D366;color:#fff;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">📲 Send All</button>
-      <button onclick="saveWaNumbers()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">💾 Save</button>
+    <div style="font-size:12px;color:var(--grey)">
+      Enter player emails, select who should receive a reminder, then send to selected players or all players with missing predictions.
+    </div>
+    <div id="email-player-list" style="overflow-y:auto;display:flex;flex-direction:column;gap:8px;max-height:50vh"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button onclick="sendEmailSelected()" style="flex:1;min-width:145px;padding:10px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">📧 Send Selected</button>
+      <button onclick="sendEmailAllMissing()" style="flex:1;min-width:145px;padding:10px;background:#1a5c38;color:#fff;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">📨 Send All Missing</button>
+      <button onclick="saveEmails()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">💾 Save</button>
     </div>
   </div>
 </div>
@@ -2373,49 +2388,179 @@ function updateReminderBanner() {
   text.innerHTML=`${urgency} <span>${missing.length} prediction${missing.length!==1?'s':''} missing</span> · Deadline in <span>${ts}</span> · <a href="#" onclick="goTo('predictions',document.querySelectorAll('.nav-btn')[2]);document.getElementById('reminder-banner').style.display='none';return false;" style="color:#fbbf24;text-decoration:underline">Enter now →</a>`;
   banner.style.display='block';
 }
-let _waNumbers={};
-async function openWaModal(){
-  if(!isAdmin(currentUser))return;
-  try{const s=await fbGet('wa_numbers');_waNumbers=s||{};}catch(e){_waNumbers={};}
-  renderWaPlayerList();
-  document.getElementById('wa-overlay').style.display='flex';
+let _playerEmails = {};
+
+function emailDeadlineText(deadline){
+  if(!deadline) return 'soon';
+  const tl = timeLeft(deadline);
+  if(!tl) return 'soon';
+  return tl.d > 0 ? `${tl.d}d ${tl.h}h` : tl.h > 0 ? `${tl.h}h ${tl.m}m` : `${tl.m}m`;
 }
-function closeWaModal(){document.getElementById('wa-overlay').style.display='none';}
-function buildWaMessage(name,missing,timeStr){
-  if(missing===0)return `⚽ Hey ${name}! You're all set for WC2026 — all predictions done. Good luck! 🏆\nmizoprediction.netlify.app`;
-  return `⚽ Hey ${name}! You have *${missing} prediction${missing!==1?'s':''} missing* for WC2026.\n\n⏰ Deadline in *${timeStr}* — don't miss it!\n\n👉 mizoprediction.netlify.app`;
+
+function getMissingPredictionCount(name){
+  const next = getNextDeadline();
+  if(!next) return 0;
+  const preds = lp(name);
+  return next.mids.filter(mid => {
+    const p = preds[mid];
+    return !isMatchLocked(mid) && (!p || p.hg === undefined);
+  }).length;
 }
-function renderWaPlayerList(){
-  const list=document.getElementById('wa-player-list');if(!list)return;
-  const next=getNextDeadline();
-  const timeStr=next?(()=>{const tl=timeLeft(next.deadline);if(!tl)return'soon';return tl.d>0?`${tl.d}d ${tl.h}h`:tl.h>0?`${tl.h}h ${tl.m}m`:`${tl.m}m`;})():'soon';
-  list.innerHTML=getAllUsers().map(u=>{
-    const preds=lp(u.name);
-    const missing=next?next.mids.filter(mid=>{const p=preds[mid];return!isMatchLocked(mid)&&(!p||p.hg===undefined);}).length:0;
-    const savedNum=_waNumbers[fbKey(u.name)]||'';
-    const msg=buildWaMessage(u.name,missing,timeStr);
-    const link=savedNum?`https://wa.me/${savedNum.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`:`https://wa.me/?text=${encodeURIComponent(msg)}`;
-    return `<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:28px;height:28px;border-radius:50%;background:${COLORS[u.name]||'#666'}20;color:${COLORS[u.name]||'#666'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">${u.name.charAt(0)}</div><div style="flex:1;font-weight:600;font-size:13px">${u.name}${missing>0?`<span style="color:var(--orange);font-size:11px;font-weight:400"> · ${missing} missing</span>`:'<span style="color:var(--green);font-size:11px;font-weight:400"> · ✅ done</span>'}</div><a href="${link}" target="_blank" style="background:#25D366;color:#fff;border-radius:6px;padding:5px 12px;font:600 12px Inter,sans-serif;text-decoration:none;flex-shrink:0">📲 Send</a></div><div style="display:flex;align-items:center;gap:6px"><span style="font-size:11px;color:var(--grey);flex-shrink:0">📞</span><input type="tel" placeholder="WhatsApp e.g. 201234567890" value="${savedNum}" oninput="_waNumbers['${fbKey(u.name)}']=this.value" style="flex:1;background:var(--pitch);border:1px solid var(--border);color:var(--white);border-radius:6px;padding:5px 10px;font-size:12px;outline:none"></div></div>`;
+
+function getEmailAddress(name){
+  const input = document.getElementById(`email-${fbKey(name)}`);
+  return (input ? input.value : (_playerEmails[fbKey(name)] || '')).trim();
+}
+
+async function openEmailModal(){
+  if(!isAdmin(currentUser)) return;
+  try {
+    const saved = await fbGet('player_emails');
+    _playerEmails = saved || {};
+  } catch(e) {
+    _playerEmails = {};
+  }
+  renderEmailPlayerList();
+  document.getElementById('email-overlay').style.display = 'flex';
+}
+
+function closeEmailModal(){
+  document.getElementById('email-overlay').style.display = 'none';
+}
+
+function buildEmailSubject(name, missing){
+  return missing > 0
+    ? `WC 2026 Predictions Reminder - ${missing} missing`
+    : 'WC 2026 Predictions - All set';
+}
+
+function buildEmailMessage(name, missing, timeStr){
+  if(missing === 0){
+    return `Hey ${name},\n\nYou're all set for WC 2026 — all predictions are done.\n\nGood luck!\n\nhttps://mizoprediction.netlify.app`;
+  }
+  return `Hey ${name},\n\nYou have ${missing} missing prediction${missing !== 1 ? 's' : ''} for WC 2026.\n\nDeadline: ${timeStr}\n\nPlease log in and complete them before the deadline:\nhttps://mizoprediction.netlify.app`;
+}
+
+function renderEmailPlayerList(){
+  const list = document.getElementById('email-player-list');
+  if(!list) return;
+
+  const next = getNextDeadline();
+  const timeStr = next ? emailDeadlineText(next.deadline) : 'soon';
+
+  list.innerHTML = getAllUsers().map(u => {
+    const name = u.name;
+    const key = fbKey(name);
+    const savedEmail = _playerEmails[key] || _playerEmails[name] || '';
+    const missing = getMissingPredictionCount(name);
+    const checked = missing > 0 ? 'checked' : '';
+
+    return `<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <input type="checkbox" id="email-select-${key}" ${checked} style="width:16px;height:16px;accent-color:#3b82f6">
+        <div style="width:28px;height:28px;border-radius:50%;background:${COLORS[name]||'#666'}20;color:${COLORS[name]||'#666'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">${name.charAt(0)}</div>
+        <div style="flex:1;font-weight:600;font-size:13px">${name}${missing>0?`<span style="color:var(--orange);font-size:11px;font-weight:400"> · ${missing} missing · ${timeStr}</span>`:'<span style="color:var(--green);font-size:11px;font-weight:400"> · ✅ done</span>'}</div>
+        <button onclick="sendEmailToPlayer('${name.replace(/'/g,"\\'")}')" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:5px 12px;font:600 12px Inter,sans-serif;cursor:pointer;flex-shrink:0">📧 Send</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:11px;color:var(--grey);flex-shrink:0">✉️</span>
+        <input type="email" id="email-${key}" placeholder="player@email.com" value="${savedEmail}" oninput="_playerEmails['${key}']=this.value" style="flex:1;background:var(--pitch);border:1px solid var(--border);color:var(--white);border-radius:6px;padding:5px 10px;font-size:12px;outline:none">
+      </div>
+    </div>`;
   }).join('');
 }
-async function saveWaNumbers(){
-  try{await fbSet('wa_numbers',_waNumbers);showToast('✅ Numbers saved!');}catch(e){showToast('❌ Failed to save');}
-}
-function sendWaAll(){
-  const next=getNextDeadline();
-  const timeStr=next?(()=>{const tl=timeLeft(next.deadline);if(!tl)return'soon';return tl.d>0?`${tl.d}d ${tl.h}h`:tl.h>0?`${tl.h}h ${tl.m}m`:`${tl.m}m`;})():'soon';
-  let opened=0;
-  getAllUsers().forEach(u=>{
-    const num=_waNumbers[fbKey(u.name)];if(!num)return;
-    const preds=lp(u.name);
-    const missing=next?next.mids.filter(mid=>{const p=preds[mid];return!isMatchLocked(mid)&&(!p||p.hg===undefined);}).length:0;
-    if(missing===0)return;
-    const link=`https://wa.me/${num.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(buildWaMessage(u.name,missing,timeStr))}`;
-    setTimeout(()=>window.open(link,'_blank'),opened*800);opened++;
+
+async function saveEmails(){
+  getAllUsers().forEach(u => {
+    const key = fbKey(u.name);
+    const email = getEmailAddress(u.name);
+    if(email) _playerEmails[key] = email;
+    else delete _playerEmails[key];
   });
-  if(opened===0)showToast('No numbers saved or everyone is done!');
-  else showToast(`📲 Opening ${opened} WhatsApp chat${opened!==1?'s':''}…`);
+
+  try {
+    await fbSet('player_emails', _playerEmails);
+    showToast('✅ Emails saved!');
+  } catch(e) {
+    showToast('❌ Failed to save emails');
+  }
 }
+
+function emailJsReady(){
+  return !!(window.emailjs && EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID);
+}
+
+async function sendEmailToPlayer(name){
+  await saveEmails();
+
+  if(!emailJsReady()){
+    showToast('⚠️ Add your EmailJS Public Key, Service ID, and Template ID first');
+    return false;
+  }
+
+  const email = getEmailAddress(name);
+  if(!email){
+    showToast(`⚠️ Missing email for ${name}`);
+    return false;
+  }
+
+  const next = getNextDeadline();
+  const missing = getMissingPredictionCount(name);
+  const timeStr = next ? emailDeadlineText(next.deadline) : 'soon';
+  const message = buildEmailMessage(name, missing, timeStr);
+
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: email,
+      player_email: email,
+      player_name: name,
+      missing_count: missing,
+      deadline: timeStr,
+      subject: buildEmailSubject(name, missing),
+      message: message,
+      website_url: 'https://mizoprediction.netlify.app'
+    });
+    showToast(`✅ Email sent to ${name}`);
+    return true;
+  } catch(e) {
+    console.error('EmailJS send failed:', e);
+    showToast(`❌ Failed to send email to ${name}`);
+    return false;
+  }
+}
+
+async function sendEmailSelected(){
+  await saveEmails();
+  let sent = 0;
+
+  for(const u of getAllUsers()){
+    const key = fbKey(u.name);
+    const selected = document.getElementById(`email-select-${key}`);
+    if(selected && selected.checked){
+      const ok = await sendEmailToPlayer(u.name);
+      if(ok) sent++;
+    }
+  }
+
+  if(sent === 0) showToast('No selected emails were sent');
+  else showToast(`📧 Sent ${sent} selected reminder${sent !== 1 ? 's' : ''}`);
+}
+
+async function sendEmailAllMissing(){
+  await saveEmails();
+  let sent = 0;
+
+  for(const u of getAllUsers()){
+    if(getMissingPredictionCount(u.name) > 0){
+      const ok = await sendEmailToPlayer(u.name);
+      if(ok) sent++;
+    }
+  }
+
+  if(sent === 0) showToast('No missing predictions or missing email addresses');
+  else showToast(`📨 Sent ${sent} missing reminder${sent !== 1 ? 's' : ''}`);
+}
+
 
 const BUILTIN_USERS = [
   {name:'Khairo', color:'#e85d04'},
@@ -2571,8 +2716,8 @@ function finishLogin(name, color) {
   document.getElementById('user-pill').style.color = color;
   const adminBtn = document.getElementById('admin-btn');
   if(adminBtn) adminBtn.style.display = isAdmin(name) ? '' : 'none';
-  const waBtn = document.getElementById('wa-btn');
-  if(waBtn) waBtn.style.display = isAdmin(name) ? '' : 'none';
+  const emailBtn = document.getElementById('email-btn');
+  if(emailBtn) emailBtn.style.display = isAdmin(name) ? '' : 'none';
   loadPredictions(name).then(() => {
     updateHeroStats();
     renderDashboard();
