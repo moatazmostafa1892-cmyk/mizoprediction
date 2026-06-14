@@ -12,3 +12,6 @@
 
 [functions."sync-results"]
   schedule = "*/5 * * * *"
+
+[functions."auto-reminders"]
+  schedule = "*/15 * * * *"
