@@ -6,7 +6,7 @@
 <title>⚽ WC 2026 Predictions</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=4bJ-tgihZIwHv8V43R8DlIB258vRCLeigS_8M85IswpVR1IXcdB-TkrkPK1ETif8-zyFfVjP_wut9Wx3jFti7w5Pb7uxruOVtpGs-HJbqJsB3VNLL_fYNOm14lcztq4k8gzBPhjmHRd0jacEbaeOGlIrqwh7dS-MsH3D1FqSaO98Pzntb9GgnBG0cJSzlcVFTlmqTe0UmRkzUGGSpOn72A-vzIuWFtlvt_5x0n9DE7-bTj8XqvicnE_W8ONR740pHcN1fiaCuj_Jl6O3Ij60nmf6LVCqh5L-lXFuk0ujzrXd1Z0Ubw4DGUUtAOczobmRkfxVVoapp-qTLei5GHe-iZI7bBLhkKEAeNaOIL7Cu84" charset="UTF-8"></script><style>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=U4eohS6xv4rwbVn5hErE1jb0YfqwGI_PMiwb5T-H_fpEKSdZh6CKfBZMDN8PpM8Z7S39EOQaq6ACGDMGmk8z2MU3VV7sVvPURGyrfPDLiKszAj6zfk-NMDyD0L0DIS79r7SsIhLY1XMQv0_3JC2PPMIjGS_QFO3jCfnXeeObxRflbV50ZRa9BAaJWjPKFAhI0ULK0N9QWTgn2DineEVa0YdVU2xeqIYrgC8l6is5-1gNH5PGwB1RaRcZ-KRQx2APUPX6dcLPN564IVB3MMuhADRpBeeFx1d0gahsrVsLFlhatYRRHT_y46g5DdCiT1QjmIPV18I1X1gZ0LuSIdtJ4o6djrGCqTgRHiLMnNDXQ9A" charset="UTF-8"></script><style>
 :root{
   --pitch:#071a0f;--card:#0b2015;--card2:#0f2a1c;--border:#1a3a26;
   --gold:#f5c518;--gold2:#b8941a;--white:#eef4ee;--grey:#6b8a76;
@@ -987,6 +987,9 @@ table.tt tr:last-child td{border-bottom:none}
 
 <script>
 
+// Mobile performance guard: phones should not render heavy sections or run result polling at startup.
+const MOBILE_LITE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 700;
+
 // ═══════════════════════════════════════════════════════════════════
 // ── MATCH DATA ──────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════
@@ -1676,6 +1679,16 @@ function refreshUI() {
 function startRealtimeSync() {
   if(!FB_READY) return;
   if(_sseSource) { _sseSource.close(); _sseSource = null; }
+
+  // On phones, EventSource + full Firebase snapshots can make the page feel stuck.
+  // Use a slower lightweight polling fallback instead.
+  if(MOBILE_LITE) {
+    if(_pollTimer) clearInterval(_pollTimer);
+    _pollTimer = setInterval(fallbackPoll, 60000);
+    setTimeout(fallbackPoll, 8000);
+    return;
+  }
+
   try {
     const url = `${FB_URL}/.json?accept=text/event-stream`;
     _sseSource = new EventSource(url);
@@ -1696,17 +1709,18 @@ function startRealtimeSync() {
     });
     _sseSource.onerror = () => {
       if(_sseSource) { _sseSource.close(); _sseSource = null; }
-      if(!_pollTimer) _pollTimer = setInterval(fallbackPoll, 5000);
+      if(!_pollTimer) _pollTimer = setInterval(fallbackPoll, MOBILE_LITE ? 60000 : 15000);
     };
     _sseSource.onopen = () => {
       if(_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
     };
   } catch(e) {
-    _pollTimer = setInterval(fallbackPoll, 5000);
+    _pollTimer = setInterval(fallbackPoll, MOBILE_LITE ? 60000 : 15000);
   }
 }
 
 async function fallbackPoll() {
+  if(document.hidden) return;
   try {
     const all = await fbGet('');
     if(all && applySnapshot(all)) refreshUI();
@@ -3055,11 +3069,20 @@ function finishLogin(name, color) {
   loadPredictions(name).then(() => {
     updateHeroStats();
     renderDashboard();
-    renderGroups();
-    renderPreds();
-    renderBracketPred();
+
+    // IMPORTANT FOR MOBILE SPEED:
+    // Do NOT render Groups, Predictions, Bracket, and Compare all at login.
+    // They are rendered only when the user opens that tab via goTo().
+    const active = document.querySelector('.sec.act')?.id || 'dashboard';
+    if(active === 'groups') renderGroups();
+    else if(active === 'predictions') renderPreds();
+    else if(active === 'bracket-pred') renderBracketPred();
+    else if(active === 'bracket-real') renderRealGroups();
+    else if(active === 'compare') renderCompare();
+
     updateReminderBanner();
-    setInterval(updateReminderBanner, 60000);
+    if(window._reminderTimer) clearInterval(window._reminderTimer);
+    window._reminderTimer = setInterval(updateReminderBanner, 60000);
     maybePromptForEmail(name);
   });
 }
@@ -4632,23 +4655,27 @@ try {
   seedKnownResults(); // Apply any pre-known results immediately
   renderDashboard();
 
-  // ── Clear any previously wrong guessed scores first, then fetch live ──
-  clearBadGuessedResults().then(() => {
-    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
-  }).catch(() => {
-    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
-  });
+  // Desktop only: result fetching can be slow on phones during first load.
+  if(!MOBILE_LITE) {
+    clearBadGuessedResults().then(() => {
+      fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+    }).catch(() => {
+      fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+    });
+  }
 
   // Bootstrap: fetch all users + predictions from Firebase FIRST
   bootstrapData().then(() => {
     syncUserGlobals();        // rebuild USERS array with Firebase users
     rebuildUserModalList();   // show final user list in modal
     renderDashboard();
-    startPolling();           // real-time SSE sync
-    scheduleAllResultFetches(); // schedule post-match result fetches
-    setTimeout(checkStageCompletions, 2000); // check for stage celebrations
-    // Second result fetch after Firebase is ready — catches anything missed
-    fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+    startPolling();           // real-time sync
+    if(!MOBILE_LITE) {
+      scheduleAllResultFetches(); // schedule post-match result fetches
+      setTimeout(checkStageCompletions, 2000); // check for stage celebrations
+      // Second result fetch after Firebase is ready — catches anything missed
+      fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
+    }
   }).catch(e => {
     syncUserGlobals();
     rebuildUserModalList();
@@ -4657,7 +4684,7 @@ try {
 
   // Re-fetch results when user comes back to the tab
   document.addEventListener('visibilitychange', () => {
-    if(!document.hidden) {
+    if(!document.hidden && !MOBILE_LITE) {
       fetchAllResults().then(r => { if(r && Object.keys(r).length) syncResultToFirebase(r); }).catch(()=>{});
     }
   });
