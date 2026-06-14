@@ -6,7 +6,7 @@
 <title>⚽ WC 2026 Predictions</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=KD7gJ3mYeetkY_pyDWFrFzBOBAfdqzu6osHIwDyB4O_TI5QKXGO__xvJfhSIYFSLjZJeOk3OcPIZBF_ushIhwuVUaT5cyxI4Mh6poBRf4z1_Ur4LL9qwutfCMwnOHEfzuR6D1qstvs8y3CgDPioHBfz1tUFbygCeQHXjrJY4LsmmMPpjCBEm6pkgJAoBqaz5W3HOsbICxj6D1PIG-jr7RSefFntVW4Ld_MZ2BDYtDokmchE9hnjmOHmuW6wp4x-oLhYuNZWtHz0ilVvnQcunr7KuaGY3-x_kuWiJvRFsKDjhqWmL5MalkIF4bt-Md0vnAwOUqlKVDVfA9LysV2hRAUp0jCXX1uSgTADP5TqaadA" charset="UTF-8"></script><style>
+<style>
 :root{
   --pitch:#071a0f;--card:#0b2015;--card2:#0f2a1c;--border:#1a3a26;
   --gold:#f5c518;--gold2:#b8941a;--white:#eef4ee;--grey:#6b8a76;
@@ -517,7 +517,7 @@ table.tt tr:last-child td{border-bottom:none}
   const EMAILJS_SERVICE_ID = "service_szyc7ed";
   const EMAILJS_TEMPLATE_ID = "template_m8gupbn";
 
-  if (window.emailjs) {
+  if (window.emailjs && EMAILJS_PUBLIC_KEY) {
     emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
   }
 </script>
@@ -562,6 +562,13 @@ table.tt tr:last-child td{border-bottom:none}
         <div class="auth-label">Choose a Username</div>
         <input class="login-input" id="signup-username" type="text" placeholder="Your name (e.g. Ahmed)"
           maxlength="30" autocomplete="off"
+          oninput="clearAuthErr('signup')"
+          onkeydown="if(event.key==='Enter')document.getElementById('signup-pin').focus()">
+      </div>
+      <div>
+        <div class="auth-label">Email Address</div>
+        <input class="login-input" id="signup-email" type="email" placeholder="you@email.com"
+          maxlength="80" autocomplete="email"
           oninput="clearAuthErr('signup')"
           onkeydown="if(event.key==='Enter')document.getElementById('signup-pin').focus()">
       </div>
@@ -680,6 +687,20 @@ table.tt tr:last-child td{border-bottom:none}
       <button onclick="sendEmailAllMissing()" style="flex:1;min-width:145px;padding:10px;background:#1a5c38;color:#fff;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">📨 Send All Missing</button>
       <button onclick="saveEmails()" style="padding:10px 16px;background:var(--gold);color:#000;border:none;border-radius:8px;font:700 13px Inter,sans-serif;cursor:pointer">💾 Save</button>
     </div>
+  </div>
+</div>
+
+<!-- EMAIL CAPTURE POPUP FOR EXISTING USERS -->
+<div id="email-capture-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:760;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:26px 30px;width:400px;max-width:92vw">
+    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:25px;color:#3b82f6;margin:0 0 6px">📧 Add Your Email</h2>
+    <p style="color:var(--grey);font-size:13px;margin-bottom:16px;line-height:1.45">Add your email once so you can receive prediction deadline reminders.</p>
+    <input class="login-input" id="email-capture-input" type="email" placeholder="you@email.com" maxlength="80" autocomplete="email"
+      oninput="document.getElementById('email-capture-err').textContent=''"
+      onkeydown="if(event.key==='Enter')saveCurrentUserEmail()">
+    <div class="auth-err" id="email-capture-err" style="margin-top:8px"></div>
+    <button class="auth-btn" onclick="saveCurrentUserEmail()" style="margin-top:6px">Save Email</button>
+    <button class="auth-btn secondary" onclick="skipCurrentUserEmailPrompt()">Skip</button>
   </div>
 </div>
 <!-- ══ CELEBRATION OVERLAY ════════════════════════════════════════ -->
@@ -2084,12 +2105,16 @@ async function doSignup() {
   const username   = (document.getElementById('signup-username').value || '').trim();
   const pin        = (document.getElementById('signup-pin').value || '').trim();
   const pinConfirm = (document.getElementById('signup-pin-confirm').value || '').trim();
+  const email      = (document.getElementById('signup-email').value || '').trim();
 
   if(!username || username.length < 2) {
     setAuthErr('signup', 'Username must be at least 2 characters'); return;
   }
   if(!/^[A-Za-z0-9 _-]+$/.test(username)) {
     setAuthErr('signup', 'Use only letters, numbers, spaces, _ or -'); return;
+  }
+  if(!isValidEmail(email)) {
+    setAuthErr('signup', 'Please enter a valid email address'); return;
   }
   if(pin.length !== 4) {
     setAuthErr('signup', 'PIN must be exactly 4 digits'); return;
@@ -2136,6 +2161,15 @@ async function doSignup() {
     // Write ONLY this user. Do not PUT the whole custom_users object,
     // because that can wipe other players if this browser has stale data.
     await fbSet(`custom_users/${fbKey(username)}`, newUser);
+
+    // Save email for reminders
+    const emailKey = fbKey(username);
+    try {
+      _playerEmails[emailKey] = email;
+      await fbSet(`player_emails/${emailKey}`, email);
+    } catch(emailErr) {
+      console.warn('Could not save signup email:', emailErr);
+    }
 
     // Set PIN
     setPINHash(username, pin);
@@ -2388,6 +2422,75 @@ function updateReminderBanner() {
   text.innerHTML=`${urgency} <span>${missing.length} prediction${missing.length!==1?'s':''} missing</span> · Deadline in <span>${ts}</span> · <a href="#" onclick="goTo('predictions',document.querySelectorAll('.nav-btn')[2]);document.getElementById('reminder-banner').style.display='none';return false;" style="color:#fbbf24;text-decoration:underline">Enter now →</a>`;
   banner.style.display='block';
 }
+function isValidEmail(email){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+}
+
+let _emailPromptUser = null;
+
+function getEmailPromptSkipKey(name){
+  return `email_prompt_skipped_${fbKey(name)}`;
+}
+
+async function loadPlayerEmails(){
+  try {
+    const saved = await fbGet('player_emails');
+    _playerEmails = saved || {};
+  } catch(e) {
+    _playerEmails = {};
+  }
+  return _playerEmails;
+}
+
+function userEmailFromCache(name){
+  const key = fbKey(name);
+  return (_playerEmails[key] || _playerEmails[name] || '').trim();
+}
+
+async function maybePromptForEmail(name){
+  if(!name) return;
+  await loadPlayerEmails();
+  if(userEmailFromCache(name)) return;
+  if(localStorage.getItem(getEmailPromptSkipKey(name)) === '1') return;
+  _emailPromptUser = name;
+  const input = document.getElementById('email-capture-input');
+  const err = document.getElementById('email-capture-err');
+  if(err) err.textContent = '';
+  if(input) input.value = '';
+  const overlay = document.getElementById('email-capture-overlay');
+  if(overlay) overlay.style.display = 'flex';
+  setTimeout(() => input && input.focus(), 50);
+}
+
+async function saveCurrentUserEmail(){
+  const name = _emailPromptUser || currentUser;
+  const input = document.getElementById('email-capture-input');
+  const err = document.getElementById('email-capture-err');
+  const email = (input ? input.value : '').trim();
+  if(!isValidEmail(email)){
+    if(err) err.textContent = 'Please enter a valid email address';
+    return;
+  }
+  const key = fbKey(name);
+  _playerEmails[key] = email;
+  try {
+    await fbSet(`player_emails/${key}`, email);
+    localStorage.removeItem(getEmailPromptSkipKey(name));
+    const overlay = document.getElementById('email-capture-overlay');
+    if(overlay) overlay.style.display = 'none';
+    showToast('✅ Email saved');
+  } catch(e) {
+    if(err) err.textContent = 'Could not save email. Please try again.';
+  }
+}
+
+function skipCurrentUserEmailPrompt(){
+  const name = _emailPromptUser || currentUser;
+  if(name) localStorage.setItem(getEmailPromptSkipKey(name), '1');
+  const overlay = document.getElementById('email-capture-overlay');
+  if(overlay) overlay.style.display = 'none';
+}
+
 let _playerEmails = {};
 
 function emailDeadlineText(deadline){
@@ -2409,17 +2512,12 @@ function getMissingPredictionCount(name){
 
 function getEmailAddress(name){
   const input = document.getElementById(`email-${fbKey(name)}`);
-  return (input ? input.value : (_playerEmails[fbKey(name)] || '')).trim();
+  return (input ? input.value : userEmailFromCache(name)).trim();
 }
 
 async function openEmailModal(){
   if(!isAdmin(currentUser)) return;
-  try {
-    const saved = await fbGet('player_emails');
-    _playerEmails = saved || {};
-  } catch(e) {
-    _playerEmails = {};
-  }
+  await loadPlayerEmails();
   renderEmailPlayerList();
   document.getElementById('email-overlay').style.display = 'flex';
 }
@@ -2487,7 +2585,10 @@ async function saveEmails(){
 }
 
 function emailJsReady(){
-  return !!(window.emailjs && EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID);
+  return window.emailjs
+    && EMAILJS_PUBLIC_KEY !== 'wcsp6fzLmJ7aMeIJQ'
+    && EMAILJS_SERVICE_ID !== 'service_szyc7ed'
+    && EMAILJS_TEMPLATE_ID !== 'template_m8gupbn';
 }
 
 async function sendEmailToPlayer(name){
@@ -2726,6 +2827,7 @@ function finishLogin(name, color) {
     renderBracketPred();
     updateReminderBanner();
     setInterval(updateReminderBanner, 60000);
+    maybePromptForEmail(name);
   });
 }
 
